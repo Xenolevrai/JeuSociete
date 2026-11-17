@@ -9,21 +9,8 @@
  * ordinateur ». La session garde donc une liste d'identifiants, et chaque
  * action précise pour qui elle est jouée.
  */
-import {
-  addPlayer,
-  dispatch,
-  publicState,
-  reconnectPlayer,
-  removePlayer,
-  startGame,
-  endGame,
-  updateSettings,
-  playerById,
-} from './engine/index.js';
 import { createRoom, getRoom, newPlayerId, scheduleSave } from './rooms.js';
-import { scheduleBots, stopBots } from './bots/runner.js';
-import { archiveGame } from './archive.js';
-import { DIFFICULTIES, DEFAULT_DIFFICULTY, PROFILES } from './bots/profiles.js';
+import { GAMES, engineOf } from './games/index.js';
 import { listEditions, DEFAULT_EDITION } from '../shared/index.js';
 
 /** Nettoie un pseudo saisi par une joueuse. */
@@ -40,22 +27,43 @@ function cleanName(name) {
  * toute seule, sans que le moteur ait à connaître leur existence.
  */
 function broadcast(io, room) {
-  io.to(room.state.code).emit('game:state', publicState(room.state));
+  const engine = engineOf(room.state);
+  emitState(io, room);
   scheduleSave(room);
   // La diffusion suit chaque changement d'état : c'est donc le seul endroit
   // d'où l'on est sûr de voir toutes les fins de partie, quel qu'en soit le
   // chemin (faillite, exploration, carte verte, arrêt à la main).
   if (room.state.phase === 'finished') {
-    stopBots(room.state.code);
-    archiveGame(room);
-  } else scheduleBots(room, (r) => {
-    io.to(r.state.code).emit('game:state', publicState(r.state));
+    engine.stopBots(room.state.code);
+    engine.onFinished(room);
+  } else engine.scheduleBots(room, (r) => {
+    emitState(io, r);
     scheduleSave(r);
     if (r.state.phase === 'finished') {
-      stopBots(r.state.code);
-      archiveGame(r);
+      engine.stopBots(r.state.code);
+      engine.onFinished(r);
     }
   });
+}
+
+/**
+ * Envoie l'état à la salle. Au Monopoly tout est public : un seul envoi. Dans
+ * un jeu à mains cachées, chaque connexion reçoit sa propre vue, taillée sur
+ * les joueuses qu'elle porte — l'état complet ne quitte jamais le serveur.
+ */
+function emitState(io, room) {
+  const engine = engineOf(room.state);
+  const code = room.state.code;
+  if (!engine.privateViews) {
+    io.to(code).emit('game:state', engine.viewFor(room.state, []));
+    return;
+  }
+  for (const socketId of io.sockets.adapter.rooms.get(code) ?? []) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (!socket) continue;
+    const playerIds = socket.data.session?.code === code ? socket.data.session.playerIds : [];
+    socket.emit('game:state', engine.viewFor(room.state, playerIds));
+  }
 }
 
 export function registerSocketHandlers(io) {
@@ -78,6 +86,8 @@ export function registerSocketHandlers(io) {
 
     const enterRoom = (room, playerIds) => {
       session = { code: room.state.code, playerIds: [...playerIds] };
+      // La vue par poste se lit ici : c'est elle qui dit quelles mains montrer.
+      socket.data.session = session;
       socket.join(room.state.code);
       announce(room);
     };
@@ -86,15 +96,23 @@ export function registerSocketHandlers(io) {
     const currentRoom = () => (session ? getRoom(session.code) : null);
 
     // — Créer une partie ————————————————————————————————————
-    socket.on('game:create', ({ name, token, settings, editionId, faction, locale, extensionIds } = {}) => {
+    socket.on('game:create', ({ game, name, token, settings, editionId, faction, locale, extensionIds } = {}) => {
       const pseudo = cleanName(name);
       if (!pseudo) return fail('Choisissez un pseudo.');
 
+      const gameId = GAMES[game] ? game : 'monopoly';
+      const engine = GAMES[gameId];
       const playerId = newPlayerId();
-      const room = createRoom(playerId, editionId ?? DEFAULT_EDITION, locale, extensionIds);
-      const added = addPlayer(room, { id: playerId, name: pseudo, token, faction });
+      const room = createRoom(playerId, {
+        game: gameId,
+        editionId: editionId ?? DEFAULT_EDITION,
+        locale,
+        extensionIds,
+        settings,
+      });
+      const added = engine.addPlayer(room, { id: playerId, name: pseudo, token, faction });
       if (!added.ok) return fail(added.error);
-      if (settings) updateSettings(room, playerId, settings);
+      if (settings) engine.updateSettings(room, playerId, settings);
       enterRoom(room, [playerId]);
     });
 
@@ -114,12 +132,12 @@ export function registerSocketHandlers(io) {
       );
       const existing = sameName.find((p) => !p.connected) ?? sameName[0];
       if (existing) {
-        reconnectPlayer(room, existing.id);
+        engineOf(room.state).reconnectPlayer(room, existing.id);
         return enterRoom(room, [existing.id]);
       }
 
       const playerId = newPlayerId();
-      const added = addPlayer(room, { id: playerId, name: pseudo, token, faction });
+      const added = engineOf(room.state).addPlayer(room, { id: playerId, name: pseudo, token, faction });
       if (!added.ok) return fail(added.error);
       enterRoom(room, [playerId]);
     });
@@ -132,7 +150,7 @@ export function registerSocketHandlers(io) {
       if (!pseudo) return fail('Choisissez un pseudo.');
 
       const playerId = newPlayerId();
-      const added = addPlayer(room, { id: playerId, name: pseudo, token, faction });
+      const added = engineOf(room.state).addPlayer(room, { id: playerId, name: pseudo, token, faction });
       if (!added.ok) return fail(added.error);
       session.playerIds.push(playerId);
       announce(room);
@@ -145,16 +163,17 @@ export function registerSocketHandlers(io) {
       if (!room) return fail("Vous n'êtes dans aucune partie.");
       if (room.state.phase !== 'lobby') return fail('La partie a déjà commencé.');
 
-      const level = DIFFICULTIES.includes(difficulty) ? difficulty : DEFAULT_DIFFICULTY;
+      const engine = engineOf(room.state);
+      const level = engine.botLevel(difficulty);
       // Un nom qui dit ce que c'est : à table, on doit savoir qui est un bot.
-      const base = PROFILES[level].label;
+      const base = engine.botLabel(level);
       let name = base;
       let n = 2;
       while (room.state.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
         name = `${base} ${n++}`;
       }
 
-      const added = addPlayer(room, { id: newPlayerId(), name, token, bot: level });
+      const added = engineOf(room.state).addPlayer(room, { id: newPlayerId(), name, token, bot: level });
       if (!added.ok) return fail(added.error);
       announce(room);
     });
@@ -163,9 +182,9 @@ export function registerSocketHandlers(io) {
       const room = currentRoom();
       if (!room) return fail("Vous n'êtes dans aucune partie.");
       if (room.state.phase !== 'lobby') return fail('La partie a déjà commencé.');
-      const player = playerById(room.state, playerId);
+      const player = engineOf(room.state).playerById(room.state, playerId);
       if (!player?.bot) return fail("Cette joueuse n'est pas un bot.");
-      removePlayer(room, playerId);
+      engineOf(room.state).removePlayer(room, playerId);
       announce(room);
     });
 
@@ -176,7 +195,7 @@ export function registerSocketHandlers(io) {
       if (room.state.phase !== 'lobby') return fail('La partie a déjà commencé.');
       if (session.playerIds.length === 1) return fail('Il doit rester au moins une joueuse sur ce poste.');
 
-      removePlayer(room, playerId);
+      engineOf(room.state).removePlayer(room, playerId);
       session.playerIds = session.playerIds.filter((id) => id !== playerId);
       announce(room);
     });
@@ -187,7 +206,7 @@ export function registerSocketHandlers(io) {
       if (!room) return fail("Cette partie n'existe plus.");
 
       const wanted = (playerIds ?? [playerId]).filter(Boolean);
-      const found = wanted.filter((id) => reconnectPlayer(room, id).ok);
+      const found = wanted.filter((id) => engineOf(room.state).reconnectPlayer(room, id).ok);
       if (!found.length) return fail('Joueuse inconnue dans cette partie.');
       enterRoom(room, found);
     });
@@ -196,7 +215,7 @@ export function registerSocketHandlers(io) {
     socket.on('game:settings', ({ settings } = {}) => {
       const room = currentRoom();
       if (!room) return fail("Vous n'êtes dans aucune partie.");
-      const result = updateSettings(room, session.playerIds[0], settings ?? {});
+      const result = engineOf(room.state).updateSettings(room, session.playerIds[0], settings ?? {});
       if (!result.ok) return fail(result.error);
       broadcast(io, room);
     });
@@ -204,7 +223,7 @@ export function registerSocketHandlers(io) {
     socket.on('game:end', () => {
       const room = currentRoom();
       if (!room) return fail("Vous n'êtes dans aucune partie.");
-      const result = endGame(room, session.playerIds[0]);
+      const result = engineOf(room.state).endGame(room, session.playerIds[0]);
       if (!result.ok) return fail(result.error);
       broadcast(io, room);
     });
@@ -212,7 +231,7 @@ export function registerSocketHandlers(io) {
     socket.on('game:start', () => {
       const room = currentRoom();
       if (!room) return fail("Vous n'êtes dans aucune partie.");
-      const result = startGame(room, session.playerIds[0]);
+      const result = engineOf(room.state).startGame(room, session.playerIds[0]);
       if (!result.ok) return fail(result.error);
       broadcast(io, room);
     });
@@ -225,7 +244,7 @@ export function registerSocketHandlers(io) {
       const actor = resolveActor(room.state, session.playerIds, action.playerId);
       if (!actor) return fail("Cette joueuse n'est pas sur ce poste.");
 
-      const result = dispatch(room, actor, action);
+      const result = engineOf(room.state).dispatch(room, actor, action);
       if (!result.ok) return fail(result.error);
       broadcast(io, room);
     });
@@ -234,11 +253,12 @@ export function registerSocketHandlers(io) {
     socket.on('game:leave', () => {
       const room = currentRoom();
       if (room) {
-        for (const playerId of session.playerIds) removePlayer(room, playerId);
+        for (const playerId of session.playerIds) engineOf(room.state).removePlayer(room, playerId);
         socket.leave(room.state.code);
         broadcast(io, room);
       }
       session = null;
+      socket.data.session = null;
     });
 
     socket.on('disconnect', () => {
@@ -247,8 +267,8 @@ export function registerSocketHandlers(io) {
       // On ne retire personne d'une partie lancée : la place et les biens
       // attendent la reconnexion.
       for (const playerId of session.playerIds) {
-        removePlayer(room, playerId);
-        const player = playerById(room.state, playerId);
+        engineOf(room.state).removePlayer(room, playerId);
+        const player = engineOf(room.state).playerById(room.state, playerId);
         if (player) player.connected = false;
       }
       broadcast(io, room);

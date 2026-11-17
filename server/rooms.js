@@ -10,8 +10,8 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-import { createGame } from './engine/index.js';
 import { createRng } from './engine/rng.js';
+import { GAMES, gameIdOf } from './games/index.js';
 
 /** Alphabet sans caractères ambigus (ni O/0, ni I/1) : un code se dicte à voix haute. */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -46,10 +46,19 @@ export function newPlayerId() {
   return randomUUID();
 }
 
-/** Crée une partie et son hôte. */
-export function createRoom(hostId, editionId, locale, extensionIds) {
+/**
+ * Crée une partie et son hôte. Le second argument est soit l'identifiant
+ * d'une édition de Monopoly (forme historique), soit les options complètes,
+ * dont `game` — l'identifiant du jeu dans la ludothèque.
+ */
+export function createRoom(hostId, editionOrOptions, locale, extensionIds) {
+  const options =
+    editionOrOptions && typeof editionOrOptions === 'object'
+      ? editionOrOptions
+      : { editionId: editionOrOptions, locale, extensionIds };
+  const engine = GAMES[options.game] ?? GAMES.monopoly;
   const code = generateCode();
-  const game = createGame(code, hostId, { editionId, locale, extensionIds });
+  const game = engine.createGame(code, hostId, options);
   games.set(code, { ...game, savedAt: 0, timer: null });
   return games.get(code);
 }
@@ -149,6 +158,7 @@ export async function restoreRooms() {
 export function listRooms() {
   return [...games.values()]
     .map((room) => ({
+      game: gameIdOf(room.state),
       code: room.state.code,
       editionId: room.state.editionId,
       locale: room.state.locale,
@@ -165,6 +175,7 @@ export function listRooms() {
         // Sert à montrer qui est déjà revenu : on reprend sa place en cliquant
         // son nom, sans avoir à retaper son pseudo ni à retrouver le code.
         connected: p.connected,
+        bot: Boolean(p.bot),
       })),
     }))
     .filter((room) => room.phase !== 'finished')

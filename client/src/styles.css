@@ -7,6 +7,7 @@
 @import '@fontsource-variable/inter/index.css';
 @import '@fontsource/oswald/400.css';
 @import '@fontsource/oswald/500.css';
+@import '@fontsource/uncial-antiqua/400.css';
 
 /**
  * Direction artistique « Plateau de table ».
@@ -426,5 +427,197 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ————————————————————————————————————————————————————————————
+   La ludothèque et Les Sept Peuples.
+
+   Même parti pris que le plateau de Monopoly : on imite des MATIÈRES, jamais
+   des effets d'écran. Une table en noyer, du papier vergé encré, un tapis de
+   feutre vert, des boutons comme des étiquettes imprimées. Aucun texte en
+   dégradé, aucun halo qui pulse, aucune vitre floutée : ce sont ces effets-là
+   qui donnent à une interface l'air d'avoir été générée.
+
+   Les couleurs passent par quelques variables que chaque MATIÈRE redéfinit :
+   un même composant écrit à l'encre sur le papier, en crème sur le bois ou le
+   feutre, sans savoir où il est posé.
+   ———————————————————————————————————————————————————————————— */
+
+.peuples-bg {
+  --pp-ink: #f1e6cb;
+  --pp-ink-soft: #c9b994;
+  --pp-accent: #e3b964;
+  --pp-rule: rgba(241, 230, 203, 0.28);
+  --pp-well: rgba(0, 0, 0, 0.22);
+  --pp-field: #f7f0dd;
+  --pp-danger: #ffb4a3;
+  /* Le noyer : des veines longues, irrégulières, et un éclairage de lampe. */
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(255, 214, 150, 0.14), transparent 60%),
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(88deg, rgba(255, 220, 170, 0.035) 0 2px, transparent 2px 23px),
+    linear-gradient(180deg, #3a271b 0%, #2a1c13 55%, #1f150e 100%);
+  color: var(--pp-ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Le papier : crème, grain discret, filet d'encre doublé d'un filet clair. */
+.peuples-panel,
+.peuples-paper {
+  --pp-ink: #2b1d12;
+  --pp-ink-soft: #6b5640;
+  --pp-accent: #7d2018;
+  --pp-rule: #c2ab7f;
+  --pp-well: rgba(120, 88, 44, 0.09);
+  --pp-field: #fbf7ea;
+  --pp-danger: #9d1f15;
+  color: var(--pp-ink);
+  background:
+    radial-gradient(140% 90% at 30% 0%, rgba(255, 255, 255, 0.55), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(110, 80, 40, 0.025) 0 1px, transparent 1px 3px),
+    #ece0c1;
+  border: 1px solid #5b4227;
+  box-shadow:
+    inset 0 0 0 3px #ece0c1,
+    inset 0 0 0 4px rgba(91, 66, 39, 0.45),
+    0 2px 0 rgba(0, 0, 0, 0.35),
+    0 10px 22px rgba(0, 0, 0, 0.35);
+  font-family: 'Inter Variable', system-ui, sans-serif;
+}
+
+/* Le tapis de jeu : feutre vert, couture au point sellier. */
+.peuples-felt {
+  --pp-ink: #f1e9d2;
+  --pp-ink-soft: #b8c7b4;
+  --pp-accent: #f0cf7a;
+  --pp-rule: rgba(241, 233, 210, 0.25);
+  --pp-well: rgba(0, 0, 0, 0.2);
+  color: var(--pp-ink);
+  background:
+    radial-gradient(70% 70% at 50% 45%, rgba(255, 255, 255, 0.06), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 3px),
+    #234536;
+  border: 6px solid #3a271b;
+  outline: 1px dashed rgba(241, 233, 210, 0.35);
+  outline-offset: -12px;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Une page de carnet : le journal s'écrit sur des lignes. */
+.pp-ruled {
+  background-image: repeating-linear-gradient(180deg, transparent 0 21px, rgba(91, 66, 39, 0.14) 21px 22px);
+  background-attachment: local;
+}
+
+.peuples-title,
+.font-fable {
+  font-family: 'Uncial Antiqua', 'Cormorant Garamond', Georgia, serif;
+}
+
+/* La taille du texte d'une carte suit sa largeur. */
+.peuples-card {
+  container-type: inline-size;
+}
+
+/* Un titre imprimé : une seule encre, pleine. */
+.gold-text {
+  color: var(--pp-accent);
+}
+
+.pp-caps {
+  font-family: 'Oswald', 'Inter Variable', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+/* Les boutons sont des étiquettes : aplat, filet sombre, une ombre portée nette. */
+.btn-gold {
+  background: #7d2018;
+  color: #f6ecd2;
+  border: 1px solid #3c0e09;
+  box-shadow: 0 2px 0 #3c0e09;
+  font-family: 'Oswald', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.btn-gold:hover:not(:disabled) {
+  background: #8f271d;
+}
+.btn-gold:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #3c0e09;
+}
+.btn-gold:disabled {
+  background: #b9ab8e;
+  color: #7a6d55;
+  border-color: #8f8168;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  border: 1px solid color-mix(in srgb, var(--pp-ink) 45%, transparent);
+  color: var(--pp-ink);
+  background: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pp-ink) 8%, transparent);
+}
+.btn-ghost:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.peuples-input {
+  background: var(--pp-field);
+  border: 1px solid #5b4227;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
+  color: #2b1d12;
+}
+.peuples-input::placeholder {
+  color: #9c8a6c;
+}
+
+/* La plaque de titre : un cartouche imprimé, cloué sur le bois. */
+.pp-plaque {
+  --pp-ink: #2b1d12;
+  --pp-ink-soft: #6b5640;
+  --pp-accent: #7d2018;
+  background: #efe4c6;
+  color: var(--pp-ink);
+  border: 1px solid #3a271b;
+  box-shadow:
+    inset 0 0 0 4px #efe4c6,
+    inset 0 0 0 5px #3a271b,
+    inset 0 0 0 7px #efe4c6,
+    inset 0 0 0 8px rgba(58, 39, 27, 0.5),
+    0 3px 0 rgba(0, 0, 0, 0.4),
+    0 14px 26px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes peuples-deal {
+  0% {
+    transform: translateY(-24px) rotate(-6deg);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.peuples-deal {
+  animation: peuples-deal 0.35s ease-out;
+}
+
+/* À qui la main : un liseré d'encre, pas un halo. */
+.peuples-active {
+  outline: 2px solid var(--pp-accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peuples-deal {
+    animation: none;
   }
 }

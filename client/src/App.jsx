@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import TokenIcon from './components/TokenIcon.jsx';
-import { useGame } from './lib/useGame.js';
 import { useCinematic } from './lib/useCinematic.js';
 import { useEditionTheme } from './lib/theme.js';
 import { sendAction } from './lib/socket.js';
@@ -159,8 +158,12 @@ function CashBar({ state, mine, t }) {
   );
 }
 
-export default function App() {
-  const { state, me, mine, error, connected, setError, leave, focusOn } = useGame();
+/**
+ * La table de Monopoly. L'état de connexion vient de `Root.jsx` : la
+ * ludothèque n'ouvre qu'une seule connexion, quel que soit le jeu.
+ */
+export default function App({ game }) {
+  const { state, me, mine, error, connected, setError, leave, focusOn } = game;
   const { rolling } = useCinematic(state);
   // Les couleurs de l'édition en cours, appliquées à toute la page.
   useEditionTheme(state);

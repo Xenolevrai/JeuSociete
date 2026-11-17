@@ -1,7 +1,18 @@
-# Monopoly — la plateforme multijoueur en temps réel
+# Ludothèque — jeux de société multijoueurs en temps réel
 
-Plusieurs boîtes de Monopoly, jouables à 2-6 depuis un navigateur, sur le même
-wifi ou à distance.
+Une étagère de jeux de société jouables depuis un navigateur, sur le même wifi
+ou à distance. L'accueil (`/`) présente toutes les boîtes ; on y rejoint aussi
+une table par son code, quel que soit le jeu.
+
+- **Monopoly** (`/monopoly`) — sept éditions, détaillées ci-dessous.
+- **Les Sept Peuples** (`/sept-peuples`) — jeu de cartes de 2 à 4 : sept
+  peuples de huit (elfes, korrigans, fées, lutins, farfadets, gnomes, dryades),
+  chacun avec son pouvoir ; les fées s'opposent aux pouvoirs adverses, et
+  peuvent elles-mêmes être contrées. Mains cachées (chaque poste ne reçoit que
+  la sienne), variantes au choix (main plafonnée, main complétée à 6, décompte
+  au plus grand peuple ou aux familles), trois niveaux de bots.
+
+## Monopoly
 
 **Le jeu est complet et jouable** : plateau, règles, temps réel, lobby, échanges,
 chat, reconnexion. On peut jouer **à plusieurs sur le même ordinateur**, avec
