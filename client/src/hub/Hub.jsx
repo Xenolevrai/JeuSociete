@@ -24,7 +24,7 @@ const SHELF = [
   },
   {
     id: 'peuples',
-    title: 'Fantaisy',
+    title: 'Fantasy',
     tagline: 'Elfes, korrigans, fées et lutins : le plus grand peuple l’emporte — ou la plus belle famille.',
     players: '2 – 4',
     duration: '15 – 25 min',
@@ -34,7 +34,7 @@ const SHELF = [
   },
 ];
 
-const GAME_NAMES = { monopoly: 'Monopoly', peuples: 'Fantaisy' };
+const GAME_NAMES = { monopoly: 'Monopoly', peuples: 'Fantasy' };
 
 /** Un plateau en miniature : quatre côtés de couleurs, deux dés. */
 function MonopolyArt() {
@@ -84,7 +84,7 @@ function MonopolyArt() {
 function PeuplesArt() {
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#120a07]">
-      <img src={COVER_IMAGE} alt="Fantaisy" className="h-full w-full object-cover object-center" />
+      <img src={COVER_IMAGE} alt="Fantasy" className="h-full w-full object-cover object-center" />
     </div>
   );
 }
