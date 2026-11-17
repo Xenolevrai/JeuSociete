@@ -78,7 +78,7 @@ export function completeFamilies(people) {
 
 const TEXT = {
   fr: {
-    title: 'Les Sept Peuples',
+    title: 'Fantaisy',
     tagline: 'Un jeu de cartes de petit peuple, de ruse et de fées.',
     race: {
       elfe: 'Elfe',
@@ -144,7 +144,7 @@ const TEXT = {
     ],
   },
   en: {
-    title: 'The Seven Folk',
+    title: 'Fantaisy',
     tagline: 'A card game of little folk, trickery and fairies.',
     race: {
       elfe: 'Elf',

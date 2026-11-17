@@ -8,8 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { socket } from '../lib/socket.js';
-import Card from '../peuples/Card.jsx';
-import { useText } from '../peuples/text.js';
+import { COVER_IMAGE } from '../peuples/CardArt.jsx';
 
 /** La fiche de chaque boîte. Ajouter un jeu, c'est ajouter une entrée ici. */
 const SHELF = [
@@ -25,7 +24,7 @@ const SHELF = [
   },
   {
     id: 'peuples',
-    title: 'Les Sept Peuples',
+    title: 'Fantaisy',
     tagline: 'Elfes, korrigans, fées et lutins : le plus grand peuple l’emporte — ou la plus belle famille.',
     players: '2 – 4',
     duration: '15 – 25 min',
@@ -35,7 +34,7 @@ const SHELF = [
   },
 ];
 
-const GAME_NAMES = { monopoly: 'Monopoly', peuples: 'Les Sept Peuples' };
+const GAME_NAMES = { monopoly: 'Monopoly', peuples: 'Fantaisy' };
 
 /** Un plateau en miniature : quatre côtés de couleurs, deux dés. */
 function MonopolyArt() {
@@ -83,18 +82,9 @@ function MonopolyArt() {
 }
 
 function PeuplesArt() {
-  const t = useText('fr');
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_40%,#4a2f22,#120a07)]">
-      {['farfadet', 'fee', 'lutin'].map((race, i) => (
-        <div
-          key={race}
-          className="-mx-3"
-          style={{ transform: `rotate(${(i - 1) * 14}deg) translateY(${i === 1 ? -4 : 8}px)`, zIndex: i === 1 ? 2 : 1 }}
-        >
-          <Card race={race} t={t} size="md" showPower={false} />
-        </div>
-      ))}
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#120a07]">
+      <img src={COVER_IMAGE} alt="Fantaisy" className="h-full w-full object-cover object-center" />
     </div>
   );
 }

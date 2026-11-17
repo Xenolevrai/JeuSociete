@@ -205,29 +205,76 @@ export function LogPanel({ state, t, me, onChat, className = '' }) {
   );
 }
 
-/** Le peuple d'une joueuse, rangé par race : une pile par famille, et son compte. */
-export function PeopleRow({ people, t, size = 'xs', onPick, pickable = false }) {
-  const groups = RACES.map((race) => ({ race, ids: people.filter((id) => id.startsWith(`${race}-`)) })).filter(
-    (g) => g.ids.length,
-  );
-  if (!groups.length) return <p className="text-xs italic text-[color:var(--pp-ink)]/40">{t.empty}</p>;
+/** Le peuple d'une joueuse : toutes les cartes posées, rangées et visibles par famille. */
+export function PeopleRow({
+  people,
+  t,
+  size = 'sm',
+  scoring = 'people',
+  onPick,
+  pickable = false,
+  emptyText,
+}) {
+  const groups = RACES.map((race) => ({
+    race,
+    ids: (people ?? []).filter((id) => id.startsWith(`${race}-`)),
+  })).filter((g) => g.ids.length > 0);
+
+  if (scoring === 'families') {
+    // Tri par taille de famille décroissante (les plus grandes familles d'abord)
+    groups.sort((a, b) => b.ids.length - a.ids.length || RACES.indexOf(a.race) - RACES.indexOf(b.race));
+  }
+
+  if (!groups.length) {
+    return (
+      <div className="flex aspect-[16/3] min-h-[2.75rem] w-full items-center justify-center rounded-sm border border-dashed border-[color:var(--pp-rule)]/40 p-2 text-center text-xs italic text-[color:var(--pp-ink)]/50">
+        {emptyText ?? t.empty}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="scroll-thin flex flex-wrap items-start gap-2.5 overflow-x-auto py-1">
       {groups.map(({ race, ids }) => (
-        <div key={race} className="relative">
-          <Card
-            race={race}
-            t={t}
-            size={size}
-            onClick={pickable ? () => onPick(ids[0]) : undefined}
-            title={`${t.race[race]} × ${ids.length}`}
-          />
-          <span
-            className="absolute -bottom-1 -right-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full border border-black px-1 text-[11px] font-bold text-black"
-            style={{ background: RACE_STYLE[race].title }}
-          >
-            {ids.length}
-          </span>
+        <div
+          key={race}
+          className="flex flex-col items-center rounded-sm border border-[color:var(--pp-rule)]/30 bg-black/15 px-2 py-1 shadow-sm transition-all hover:bg-black/25"
+        >
+          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
+            <span
+              className="h-2 w-2 rounded-full border border-black shadow-xs"
+              style={{ background: RACE_STYLE[race].accent }}
+            />
+            <span className="text-[11px]" style={{ color: RACE_STYLE[race].title }}>
+              {t.race[race]}
+            </span>
+            <span className="rounded-full bg-black/40 px-1.5 py-0.2 text-[10px] font-bold text-[#f6ecd2]">
+              {ids.length}
+            </span>
+            {ids.length === 8 && (
+              <span className="text-[10px] text-[#ffd35a] font-bold" title="Famille complète">
+                ★
+              </span>
+            )}
+          </div>
+          <div className="flex items-center -space-x-7 px-1 py-1 transition-all hover:-space-x-3">
+            {ids.map((cardId, i) => (
+              <div
+                key={`${cardId}-${i}`}
+                className="transition-transform duration-150 hover:-translate-y-2 hover:z-30"
+                style={{ zIndex: i + 1 }}
+              >
+                <Card
+                  cardId={cardId}
+                  race={race}
+                  t={t}
+                  size={size}
+                  onClick={pickable ? () => onPick(cardId) : undefined}
+                  title={`${t.race[race]} (${cardId})`}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>

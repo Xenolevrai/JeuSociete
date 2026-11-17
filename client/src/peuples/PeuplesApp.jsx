@@ -8,7 +8,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sendAction, socket } from '../lib/socket.js';
-import Card, { HandBacks } from './Card.jsx';
+import Card from './Card.jsx';
 import PeuplesLobby from './PeuplesLobby.jsx';
 import { GameOverDialog, LogPanel, PeopleRow, RulesDialog } from './PeuplesPanels.jsx';
 import { useText, withArticle } from './text.js';
@@ -16,31 +16,98 @@ import { raceOf } from '../../../shared/peuples.js';
 
 const nameOf = (state, id) => state.players.find((p) => p.id === id)?.name ?? '?';
 
-/** Une adversaire autour de la table. */
-function Seat({ player, t, active, awaited }) {
+/** Une adversaire en face autour de la table. */
+function Seat({ player, t, active, awaited, scoring }) {
+  const handCount = player.handCount ?? 0;
+  const maxShown = Math.min(handCount, 12);
+
   return (
     <div
-      className={`peuples-panel rounded-sm p-2.5 ${
-        player.connected || player.bot ? '' : 'opacity-60'
-      }`}
+      className={`peuples-panel flex flex-col rounded-sm p-3 transition-all ${
+        active || awaited ? 'ring-2 ring-[color:var(--pp-accent)] shadow-md' : ''
+      } ${player.connected || player.bot ? '' : 'opacity-60'}`}
     >
-      <div className="mb-2 flex items-center gap-2">
-        <span className="h-3 w-3 shrink-0 rounded-full border border-black" style={{ background: player.color }} />
-        <span className="truncate font-semibold">{player.name}</span>
-        {player.bot && <span className="rounded bg-[color:var(--pp-well)] px-1 text-[9px] uppercase tracking-wide">{t.bot}</span>}
-        {/* Un signet glissé sur la fiche plutôt qu'un halo : à qui la main. */}
-        {(active || awaited) && (
-          <span className="pp-caps ml-auto bg-[#7d2018] px-1.5 py-0.5 text-[9px] text-[#f6ecd2]">{awaited ? t.thinking : t.theirTurn}</span>
+      {/* 1. Profil et statut de l'adversaire */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--pp-rule)]/40 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black shadow" style={{ background: player.color }} />
+          <span className="font-semibold text-base" style={{ color: player.color }}>
+            {player.name}
+          </span>
+          {player.bot && (
+            <span className="rounded bg-[color:var(--pp-well)] px-1.5 py-0.5 text-[9px] uppercase tracking-wide">
+              {t.bot}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {(active || awaited) && (
+            <span className="pp-caps bg-[#7d2018] px-2 py-0.5 text-[10px] text-[#f6ecd2] rounded-xs shadow animate-pulse">
+              {awaited ? t.thinking : t.theirTurn}
+            </span>
+          )}
+          <span className="text-xs text-[color:var(--pp-ink-soft)] font-medium">
+            {t.cards(handCount)}
+          </span>
+        </div>
+      </div>
+
+      {/* 2. Main de l'adversaire : tenue en main face à nous (dos des cartes visible) */}
+      <div className="my-2.5 flex flex-col items-center justify-center">
+        <p className="pp-caps text-[10px] text-[color:var(--pp-ink-soft)]/70 mb-1">
+          Cartes en main · {handCount}
+        </p>
+        {handCount > 0 ? (
+          <div className="flex items-center justify-center pt-2 pb-1" style={{ minHeight: '5.5rem' }}>
+            {Array.from({ length: maxShown }, (_, i) => {
+              const offset = i - (maxShown - 1) / 2;
+              const rotate = offset * 4;
+              const translateY = Math.abs(offset) * 2;
+              return (
+                <div
+                  key={i}
+                  className="-ml-6 sm:-ml-7 first:ml-0 transition-transform duration-200 shadow-md hover:-translate-y-1"
+                  style={{
+                    transform: `rotate(${rotate}deg) translateY(${translateY}px)`,
+                    zIndex: i + 1,
+                  }}
+                  title={`Carte de ${player.name} (${i + 1}/${handCount})`}
+                >
+                  <Card size="sm" faceDown t={t} />
+                </div>
+              );
+            })}
+            {handCount > maxShown && (
+              <span className="ml-2 text-xs font-bold text-[color:var(--pp-accent)]">
+                +{handCount - maxShown}
+              </span>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs italic text-[color:var(--pp-ink)]/40 py-2">
+            Aucune carte en main
+          </p>
         )}
       </div>
-      <div className="mb-2 flex items-center gap-2 text-xs text-[color:var(--pp-ink)]/70">
-        <HandBacks count={player.handCount} />
-        <span>{t.cards(player.handCount)}</span>
-        <span className="ml-auto">
-          {t.people} : <b className="text-[color:var(--pp-ink)]">{player.people.length}</b>
-        </span>
+
+      {/* 3. Cartes posées par l'adversaire sur la table (son peuple) */}
+      <div className="mt-auto border-t border-[color:var(--pp-rule)]/40 pt-2">
+        <div className="mb-1.5 flex items-center justify-between px-1">
+          <span className="pp-caps text-[11px] text-[color:var(--pp-ink-soft)] font-semibold">
+            {t.people} de {player.name}
+          </span>
+          <span className="text-xs text-[color:var(--pp-ink)] font-bold">
+            {t.members(player.people.length)}
+          </span>
+        </div>
+        <PeopleRow
+          people={player.people}
+          scoring={scoring}
+          t={t}
+          size="sm"
+          emptyText={`Aucune carte posée par ${player.name}`}
+        />
       </div>
-      <PeopleRow people={player.people} t={t} size="xs" />
     </div>
   );
 }
@@ -175,14 +242,35 @@ function Decision({ state, me, t, selected, onShuffle }) {
   switch (pending.kind) {
     case 'play_card':
       body = (
-        <p className="text-center">
-          {t.pickToPlay}
-          {selected && (
-            <span className="ml-2 font-semibold text-[color:var(--pp-accent)]">
-              → {t.race[raceOf(selected)]}
-            </span>
-          )}
-        </p>
+        <div className="space-y-2.5 text-center">
+          <p className="font-fable text-2xl text-[color:var(--pp-accent)]">
+            {t.yourMove ?? 'À vous de jouer !'}
+          </p>
+          <p className="text-sm text-[color:var(--pp-ink)]">
+            {selected ? (
+              <span>
+                Carte prête à poser :{' '}
+                <b className="text-[color:var(--pp-accent)] text-base">{t.race[raceOf(selected)]}</b>
+              </span>
+            ) : (
+              <span className="italic text-[color:var(--pp-ink-soft)]">
+                {t.pickToPlay}
+              </span>
+            )}
+          </p>
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={() => sendAction({ type: 'PLAY_CARD', cardId: selected }, me.id)}
+              className={`btn-gold rounded-sm px-6 py-2.5 font-bold text-sm shadow-md transition-all ${
+                selected ? 'scale-105 shadow-[0_0_15px_rgba(227,185,100,0.5)]' : 'opacity-40 cursor-not-allowed'
+              }`}
+            >
+              {selected ? `Poser ${t.race[raceOf(selected)]}` : t.playShort}
+            </button>
+          </div>
+        </div>
       );
       break;
 
@@ -475,90 +563,132 @@ function Table({ game }) {
       </header>
 
       <div className="mx-auto grid max-w-[1600px] gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <main className="flex min-w-0 flex-col gap-3">
+        <main className="flex min-w-0 flex-col gap-4">
+          {/* En face de nous : l'adversaire (ou les adversaires), sa main tenue et ses cartes posées */}
           <div className={`grid gap-3 ${seats.length > 1 ? 'sm:grid-cols-2' : ''} ${seats.length > 2 ? 'lg:grid-cols-3' : ''}`}>
             {seats.map((player) => (
               <Seat
                 key={player.id}
                 player={player}
                 t={t}
+                scoring={state.settings?.scoring}
                 active={current?.id === player.id && state.phase === 'playing'}
                 awaited={pending.playerIds.includes(player.id)}
               />
             ))}
           </div>
 
-          {/* Le centre de la table : la pioche, la dernière carte posée, ce qui se passe. */}
-          <section className="peuples-felt grid grid-cols-2 items-center gap-4 rounded-sm p-4 sm:grid-cols-[auto_auto_1fr]">
-            <div className="flex flex-col items-center gap-1">
-              {state.deckCount > 0 ? (
-                // L'épaisseur de la pile suit ce qu'il en reste.
-                <div className="relative" style={{ paddingRight: Math.min(8, state.deckCount / 5), paddingBottom: Math.min(8, state.deckCount / 5) }}>
-                  {state.deckCount > 1 && (
-                    <div className="absolute bottom-0 right-0 aspect-[5/7] w-24 rounded-[6%] border border-black bg-[#2a1a12] sm:w-28" />
+          {/* Le centre de la table : la pioche, la dernière carte posée, et la zone d'action */}
+          <section className="peuples-felt flex flex-col gap-4 rounded-sm p-4 shadow-lg border border-[color:var(--pp-rule)]/30">
+            <div className="grid grid-cols-2 items-center gap-4 sm:grid-cols-[auto_auto_1fr]">
+              <div className="flex flex-col items-center gap-1">
+                {state.deckCount > 0 ? (
+                  // L'épaisseur de la pile suit ce qu'il en reste.
+                  <div className="relative" style={{ paddingRight: Math.min(8, state.deckCount / 5), paddingBottom: Math.min(8, state.deckCount / 5) }}>
+                    {state.deckCount > 1 && (
+                      <div className="absolute bottom-0 right-0 aspect-[2/3] w-24 rounded-[5%] border border-black bg-[#2a1a12] sm:w-28" />
+                    )}
+                    <Card t={t} size="md" faceDown />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[2/3] w-24 items-center justify-center rounded-sm border border-dashed border-[color:var(--pp-rule)] text-center text-xs text-[color:var(--pp-ink)]/45 sm:w-28">
+                    {t.deckEmpty}
+                  </div>
+                )}
+                <span className="text-xs text-[color:var(--pp-ink)]/80 font-medium">
+                  {t.deck} · {state.deckCount}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                {last ? (
+                  <div key={`${last.cardId}-${last.at}`} className="peuples-deal">
+                    <Card cardId={last.cardId} t={t} size="lg" />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[2/3] w-32 items-center justify-center rounded-sm border border-dashed border-[color:var(--pp-rule)] text-center text-xs text-[color:var(--pp-ink)]/45 sm:w-36">
+                    {t.lastPlayed}
+                  </div>
+                )}
+                <span className="text-xs text-[color:var(--pp-ink)]/80 font-medium">
+                  {last ? `${t.lastPlayed} · ${nameOf(state, last.playerId)}` : t.lastPlayed}
+                </span>
+              </div>
+              <div className="col-span-2 min-w-0 space-y-3 text-center sm:col-span-1 sm:text-left">
+                <div ref={decisionRef}>
+                  {myDecision ? (
+                    <Decision state={state} me={me} t={t} selected={selected} onShuffle={shuffle} />
+                  ) : (
+                    <>
+                      <p className="font-fable text-2xl text-[color:var(--pp-accent)]">{statusLine(state, t, me)}</p>
+                      <EffectBanner state={state} t={t} />
+                      <ul className="space-y-1 text-sm text-[color:var(--pp-ink)]/80">
+                        {recent.map((entry) => (
+                          <li key={entry.id} className="fade-in">
+                            {entry.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
                   )}
-                  <Card t={t} size="md" faceDown />
                 </div>
-              ) : (
-                <div className="flex aspect-[5/7] w-24 items-center justify-center rounded-sm border border-dashed border-[color:var(--pp-rule)] text-center text-xs text-[color:var(--pp-ink)]/45 sm:w-28">
-                  {t.deckEmpty}
-                </div>
-              )}
-              <span className="text-xs text-[color:var(--pp-ink)]/70">
-                {t.deck} · {state.deckCount}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              {last ? (
-                <div key={`${last.cardId}-${last.at}`} className="peuples-deal">
-                  <Card cardId={last.cardId} t={t} size="lg" />
-                </div>
-              ) : (
-                <div className="aspect-[5/7] w-32 rounded-sm border border-dashed border-[color:var(--pp-rule)] sm:w-36" />
-              )}
-              <span className="text-xs text-[color:var(--pp-ink)]/70">
-                {last ? `${t.lastPlayed} · ${nameOf(state, last.playerId)}` : t.lastPlayed}
-              </span>
-            </div>
-            <div className="col-span-2 min-w-0 space-y-3 text-center sm:col-span-1 sm:text-left">
-              <p className="font-fable text-2xl text-[color:var(--pp-accent)]">{statusLine(state, t, me)}</p>
-              <EffectBanner state={state} t={t} />
-              <ul className="space-y-1 text-sm text-[color:var(--pp-ink)]/80">
-                {recent.map((entry) => (
-                  <li key={entry.id} className="fade-in">
-                    {entry.text}
-                  </li>
-                ))}
-              </ul>
+                {myDecision && <EffectBanner state={state} t={t} />}
+              </div>
             </div>
           </section>
 
+          {/* Devant moi : mes cartes déjà posées (mon peuple) et ma main */}
           {me && (
-            <section className="peuples-panel space-y-3 rounded-sm p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="h-3 w-3 rounded-full border border-black" style={{ background: me.color }} />
-                <span className="font-semibold">{mine.length > 1 ? t.handOf(me.name) : me.name}</span>
-                <span className="pp-caps text-[11px] text-[color:var(--pp-ink-soft)]/70">
+            <section className="peuples-panel space-y-4 rounded-sm p-4 shadow-md">
+              <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--pp-rule)]/40 pb-2">
+                <span className="h-3.5 w-3.5 rounded-full border border-black shadow" style={{ background: me.color }} />
+                <span className="font-semibold text-base">{mine.length > 1 ? t.handOf(me.name) : me.name}</span>
+                <span className="pp-caps text-[11px] text-[color:var(--pp-ink-soft)] font-medium">
                   · {t.yourPeople} · {t.members(me.people.length)}
                 </span>
+                {state.settings?.scoring === 'families' && (
+                  <span className="rounded bg-[color:var(--pp-well)] px-2 py-0.5 text-[10px] font-bold text-[color:var(--pp-accent)]">
+                    Décompte aux familles
+                  </span>
+                )}
                 {mine.length > 1 && (
                   <span className="ml-auto text-xs text-[color:var(--pp-ink)]/50">
                     {mine.filter((p) => p.id !== me.id).map((p) => `${p.name} : ${t.cards(p.handCount)}`).join(' · ')}
                   </span>
                 )}
               </div>
-              <PeopleRow people={me.people} t={t} size="sm" />
-              <div ref={decisionRef}>
-                <Decision state={state} me={me} t={t} selected={selected} onShuffle={shuffle} />
+
+              {/* Vos cartes posées sur la table */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <p className="pp-caps text-[11px] font-bold text-[color:var(--pp-ink-soft)]">
+                    Vos cartes posées sur la table ({me.people.length})
+                  </p>
+                  {state.settings?.scoring === 'families' && (
+                    <span className="text-[11px] italic text-[color:var(--pp-ink-soft)]">
+                      Triées par famille (les plus grandes en premier)
+                    </span>
+                  )}
+                </div>
+                <PeopleRow
+                  people={me.people}
+                  scoring={state.settings?.scoring}
+                  t={t}
+                  size="sm"
+                  emptyText="Vous n'avez pas encore posé de cartes sur la table."
+                />
               </div>
-              <Hand
-                me={me}
-                t={t}
-                selected={selected}
-                setSelected={setSelected}
-                canPlay={canPlay}
-                onShuffle={shuffle}
-              />
+
+              {/* Ma main */}
+              <div className="border-t border-[color:var(--pp-rule)]/40 pt-3">
+                <Hand
+                  me={me}
+                  t={t}
+                  selected={selected}
+                  setSelected={setSelected}
+                  canPlay={canPlay}
+                  onShuffle={shuffle}
+                />
+              </div>
             </section>
           )}
         </main>
