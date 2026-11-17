@@ -515,6 +515,30 @@ body {
   color: var(--pp-ink);
 }
 
+/* Grilles pour les adversaires en face selon le nombre de joueurs (2, 3 ou 4 joueurs) */
+.peuples-seats-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.peuples-seats-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .peuples-seats-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.peuples-seats-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .peuples-seats-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* Une page de carnet : le journal s'écrit sur des lignes. */
 .pp-ruled {
   background-image: repeating-linear-gradient(180deg, transparent 0 21px, rgba(91, 66, 39, 0.14) 21px 22px);

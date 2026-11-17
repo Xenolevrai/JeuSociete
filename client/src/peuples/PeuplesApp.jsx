@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sendAction, socket } from '../lib/socket.js';
 import Card from './Card.jsx';
+import { RACE_STYLE } from './CardArt.jsx';
 import PeuplesLobby from './PeuplesLobby.jsx';
 import { GameOverDialog, LogPanel, PeopleRow, RulesDialog } from './PeuplesPanels.jsx';
 import { useText, withArticle } from './text.js';
@@ -17,9 +18,44 @@ import { raceOf } from '../../../shared/peuples.js';
 const nameOf = (state, id) => state.players.find((p) => p.id === id)?.name ?? '?';
 
 /** Une adversaire en face autour de la table. */
-function Seat({ player, t, active, awaited, scoring }) {
+function Seat({ player, t, active, awaited, scoring, seatCount = 1, seatIndex = 0 }) {
   const handCount = player.handCount ?? 0;
-  const maxShown = Math.min(handCount, 12);
+  const isCompact = seatCount >= 3;
+  const maxShown = Math.min(handCount, isCompact ? 10 : 12);
+
+  // Position relative autour de la table (sens des aiguilles d'une montre)
+  const positionLabel =
+    seatCount === 1
+      ? 'Adversaire en face'
+      : seatCount === 2
+      ? seatIndex === 0
+        ? 'Joue après vous →'
+        : '→ Joue avant vous'
+      : seatIndex === 0
+      ? 'À votre gauche (joue après) →'
+      : seatIndex === 1
+      ? 'En face de vous'
+      : '→ À votre droite (joue avant)';
+
+  // Familles présentes dans son peuple
+  const familiesCount = useMemo(() => {
+    const counts = {};
+    for (const id of player.people ?? []) {
+      const r = raceOf(id);
+      counts[r] = (counts[r] || 0) + 1;
+    }
+    return counts;
+  }, [player.people]);
+
+  // Dimension et chevauchement adaptés à l'espace disponible
+  const cardSize = isCompact ? 'xs' : 'sm';
+  const marginOffset = isCompact
+    ? maxShown > 6
+      ? '-ml-5'
+      : '-ml-4'
+    : maxShown > 6
+    ? '-ml-8 sm:-ml-9'
+    : '-ml-6 sm:-ml-7';
 
   return (
     <div
@@ -27,58 +63,63 @@ function Seat({ player, t, active, awaited, scoring }) {
         active || awaited ? 'ring-2 ring-[color:var(--pp-accent)] shadow-md' : ''
       } ${player.connected || player.bot ? '' : 'opacity-60'}`}
     >
-      {/* 1. Profil et statut de l'adversaire */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--pp-rule)]/40 pb-2">
-        <div className="flex items-center gap-2">
+      {/* 1. Profil, statut et position de l'adversaire */}
+      <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[color:var(--pp-rule)]/40 pb-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black shadow" style={{ background: player.color }} />
-          <span className="font-semibold text-base" style={{ color: player.color }}>
+          <span className="font-semibold text-base truncate" style={{ color: player.color }}>
             {player.name}
           </span>
           {player.bot && (
-            <span className="rounded bg-[color:var(--pp-well)] px-1.5 py-0.5 text-[9px] uppercase tracking-wide">
+            <span className="rounded bg-[color:var(--pp-well)] px-1.5 py-0.5 text-[9px] uppercase tracking-wide shrink-0">
               {t.bot}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {(active || awaited) && (
             <span className="pp-caps bg-[#7d2018] px-2 py-0.5 text-[10px] text-[#f6ecd2] rounded-xs shadow animate-pulse">
               {awaited ? t.thinking : t.theirTurn}
             </span>
           )}
-          <span className="text-xs text-[color:var(--pp-ink-soft)] font-medium">
+          <span className="text-xs text-[color:var(--pp-ink-soft)] font-bold">
             {t.cards(handCount)}
           </span>
         </div>
       </div>
 
+      {/* Position dans l'ordre du tour */}
+      <div className="mt-1.5 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 rounded-sm bg-[color:var(--pp-well)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--pp-ink)] border border-[color:var(--pp-rule)]/40 shadow-2xs">
+          <span className="text-[color:var(--pp-accent)] font-bold">🧭</span>
+          <span>{positionLabel}</span>
+        </span>
+      </div>
+
       {/* 2. Main de l'adversaire : tenue en main face à nous (dos des cartes visible) */}
-      <div className="my-2.5 flex flex-col items-center justify-center">
-        <p className="pp-caps text-[10px] text-[color:var(--pp-ink-soft)]/70 mb-1">
-          Cartes en main · {handCount}
-        </p>
+      <div className="my-2 flex flex-col items-center justify-center">
         {handCount > 0 ? (
-          <div className="flex items-center justify-center pt-2 pb-1" style={{ minHeight: '5.5rem' }}>
+          <div className="flex items-center justify-center pt-1 pb-1" style={{ minHeight: isCompact ? '4.5rem' : '5.5rem' }}>
             {Array.from({ length: maxShown }, (_, i) => {
               const offset = i - (maxShown - 1) / 2;
-              const rotate = offset * 4;
-              const translateY = Math.abs(offset) * 2;
+              const rotate = offset * (isCompact ? 3 : 4);
+              const translateY = Math.abs(offset) * (isCompact ? 1.5 : 2);
               return (
                 <div
                   key={i}
-                  className="-ml-6 sm:-ml-7 first:ml-0 transition-transform duration-200 shadow-md hover:-translate-y-1"
+                  className={`${marginOffset} first:ml-0 transition-transform duration-200 shadow-md hover:-translate-y-1`}
                   style={{
                     transform: `rotate(${rotate}deg) translateY(${translateY}px)`,
                     zIndex: i + 1,
                   }}
                   title={`Carte de ${player.name} (${i + 1}/${handCount})`}
                 >
-                  <Card size="sm" faceDown t={t} />
+                  <Card size={cardSize} faceDown t={t} />
                 </div>
               );
             })}
             {handCount > maxShown && (
-              <span className="ml-2 text-xs font-bold text-[color:var(--pp-accent)]">
+              <span className="ml-1.5 text-xs font-bold text-[color:var(--pp-accent)]">
                 +{handCount - maxShown}
               </span>
             )}
@@ -92,20 +133,38 @@ function Seat({ player, t, active, awaited, scoring }) {
 
       {/* 3. Cartes posées par l'adversaire sur la table (son peuple) */}
       <div className="mt-auto border-t border-[color:var(--pp-rule)]/40 pt-2">
-        <div className="mb-1.5 flex items-center justify-between px-1">
-          <span className="pp-caps text-[11px] text-[color:var(--pp-ink-soft)] font-semibold">
-            {t.people} de {player.name}
-          </span>
-          <span className="text-xs text-[color:var(--pp-ink)] font-bold">
-            {t.members(player.people.length)}
+        <div className="mb-1 flex items-center justify-between px-0.5">
+          <span className="pp-caps text-[10px] text-[color:var(--pp-ink-soft)] font-semibold">
+            {t.people} · {t.members(player.people.length)}
           </span>
         </div>
+
+        {/* Puces de synthèse des familles présentes */}
+        {Object.keys(familiesCount).length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1">
+            {Object.entries(familiesCount).map(([race, count]) => (
+              <span
+                key={race}
+                className="inline-flex items-center gap-1 rounded bg-black/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#f6ecd2]"
+                title={`${count} ${t.racePlural?.[race] ?? race}`}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: RACE_STYLE[race]?.accent ?? '#fff' }}
+                />
+                <span>{t.race?.[race]}</span>
+                <span className="font-bold text-[#ffd35a]">{count}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
         <PeopleRow
           people={player.people}
           scoring={scoring}
           t={t}
-          size="sm"
-          emptyText={`Aucune carte posée par ${player.name}`}
+          size={isCompact ? 'xs' : 'sm'}
+          emptyText={`Aucune carte posée`}
         />
       </div>
     </div>
@@ -191,10 +250,11 @@ function FamilySwapPicker({ state, me, t, payload, act }) {
                 setTargetId(p.id);
                 setTake(null);
               }}
-              className={`flex items-center gap-2 rounded-sm px-3 py-1.5 ${p.id === targetId ? 'btn-gold' : 'btn-ghost'}`}
+              className={`flex items-center gap-2 rounded-sm px-3.5 py-1.5 font-medium ${p.id === targetId ? 'btn-gold' : 'btn-ghost'}`}
             >
               <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />
               {p.name}
+              <span className="text-[11px] opacity-75">({p.people.length} cartes)</span>
             </button>
           ))}
         </div>
@@ -295,20 +355,27 @@ function Decision({ state, me, t, selected, onShuffle }) {
         payload.power === 'dryade' ? (
           <div className="space-y-2">
             <p className="text-center font-semibold text-base text-[color:var(--pp-ink)]">{t.dryadTitle}</p>
-            {targets.map((target) => (
-              <div key={target.id} className="rounded-sm bg-[color:var(--pp-well)] p-2">
-                <p className="mb-1 text-sm font-semibold" style={{ color: target.color }}>
-                  {target.name}
-                </p>
-                <PeopleRow
-                  people={target.people}
-                  t={t}
-                  size="sm"
-                  pickable
-                  onPick={(cardId) => act({ type: 'CHOOSE_TARGET', targetId: target.id, cardId })}
-                />
-              </div>
-            ))}
+            <div className={`grid gap-2 ${targets.length > 2 ? 'sm:grid-cols-3' : targets.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+              {targets.map((target) => (
+                <div key={target.id} className="rounded-sm bg-[color:var(--pp-well)] p-2">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="text-sm font-semibold" style={{ color: target.color }}>
+                      {target.name}
+                    </span>
+                    <span className="text-[10px] text-[color:var(--pp-ink-soft)] font-medium">
+                      {target.people.length} cartes
+                    </span>
+                  </div>
+                  <PeopleRow
+                    people={target.people}
+                    t={t}
+                    size="xs"
+                    pickable
+                    onPick={(cardId) => act({ type: 'CHOOSE_TARGET', targetId: target.id, cardId })}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="space-y-2 text-center">
@@ -319,11 +386,11 @@ function Decision({ state, me, t, selected, onShuffle }) {
                   key={target.id}
                   type="button"
                   onClick={() => act({ type: 'CHOOSE_TARGET', targetId: target.id })}
-                  className="btn-ghost flex items-center gap-2 rounded-sm px-4 py-2"
+                  className="btn-ghost flex items-center gap-2 rounded-sm px-4 py-2 hover:bg-[color:var(--pp-well)] font-medium"
                 >
                   <span className="h-3 w-3 rounded-full" style={{ background: target.color }} />
                   <b>{target.name}</b>
-                  <span className="text-xs text-[color:var(--pp-ink-soft)]">
+                  <span className="text-xs text-[color:var(--pp-ink-soft)] font-bold">
                     {t.cards(target.handCount)} · {t.people} {target.people.length}
                   </span>
                 </button>
@@ -536,6 +603,16 @@ function Table({ game }) {
   const last = state.lastPlayed;
   const recent = state.log.filter((e) => ['play', 'power', 'fairy', 'pass', 'setup', 'target'].includes(e.type)).slice(-3);
 
+  // Synthèse des familles de son propre peuple
+  const myFamiliesCount = useMemo(() => {
+    const counts = {};
+    for (const id of me?.people ?? []) {
+      const r = raceOf(id);
+      counts[r] = (counts[r] || 0) + 1;
+    }
+    return counts;
+  }, [me?.people]);
+
   return (
     <div className="peuples-bg min-h-screen">
       <header className="peuples-paper sticky top-0 z-30 flex flex-wrap items-center gap-x-4 gap-y-1 !border-x-0 !border-t-0 px-3 py-2">
@@ -568,13 +645,15 @@ function Table({ game }) {
 
       <div className="mx-auto grid max-w-[1600px] gap-3 p-3 xl:grid-cols-[minmax(0,1fr)_340px]">
         <main className="flex min-w-0 flex-col gap-4">
-          {/* En face de nous : l'adversaire (ou les adversaires), sa main tenue et ses cartes posées */}
-          <div className={`grid gap-3 ${seats.length > 1 ? 'sm:grid-cols-2' : ''} ${seats.length > 2 ? 'lg:grid-cols-3' : ''}`}>
-            {seats.map((player) => (
+          {/* En face de nous : les adversaires (1, 2 ou 3), leurs mains tenues et leurs cartes posées */}
+          <div className={`gap-3 peuples-seats-${Math.min(3, Math.max(1, seats.length))}`}>
+            {seats.map((player, index) => (
               <Seat
                 key={player.id}
                 player={player}
                 t={t}
+                seatCount={seats.length}
+                seatIndex={index}
                 scoring={state.settings?.scoring}
                 active={current?.id === player.id && state.phase === 'playing'}
                 awaited={pending.playerIds.includes(player.id)}
@@ -673,6 +752,27 @@ function Table({ game }) {
                     </span>
                   )}
                 </div>
+
+                {/* Synthèse des familles de son peuple */}
+                {Object.keys(myFamiliesCount).length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1 px-1">
+                    {Object.entries(myFamiliesCount).map(([race, count]) => (
+                      <span
+                        key={race}
+                        className="inline-flex items-center gap-1.5 rounded bg-black/20 px-2 py-0.5 text-xs font-semibold text-[#f6ecd2]"
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: RACE_STYLE[race]?.accent ?? '#fff' }}
+                        />
+                        <span>{t.race?.[race]}</span>
+                        <span className="font-bold text-[#ffd35a]">{count}</span>
+                        {count === 8 && <span className="text-[#ffd35a]" title="Famille complète">★</span>}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <PeopleRow
                   people={me.people}
                   scoring={state.settings?.scoring}

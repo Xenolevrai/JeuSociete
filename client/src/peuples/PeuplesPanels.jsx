@@ -233,19 +233,23 @@ export function PeopleRow({
     );
   }
 
+  const stackOverlap = size === 'xs' ? '-space-x-5 hover:-space-x-2' : '-space-x-7 hover:-space-x-3';
+
   return (
-    <div className="scroll-thin flex flex-wrap items-start gap-2.5 overflow-x-auto py-1">
+    <div className="scroll-thin flex flex-wrap items-start gap-2 overflow-x-auto py-1">
       {groups.map(({ race, ids }) => (
         <div
           key={race}
-          className="flex flex-col items-center rounded-sm border border-[color:var(--pp-rule)]/30 bg-black/15 px-2 py-1 shadow-sm transition-all hover:bg-black/25"
+          className={`flex flex-col items-center rounded-sm border border-[color:var(--pp-rule)]/30 bg-black/15 ${
+            size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-1'
+          } shadow-sm transition-all hover:bg-black/25`}
         >
           <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
             <span
               className="h-2 w-2 rounded-full border border-black shadow-xs"
               style={{ background: RACE_STYLE[race].accent }}
             />
-            <span className="text-[11px]" style={{ color: RACE_STYLE[race].title }}>
+            <span className={`${size === 'xs' ? 'text-[10px]' : 'text-[11px]'}`} style={{ color: RACE_STYLE[race].title }}>
               {t.race[race]}
             </span>
             <span className="rounded-full bg-black/40 px-1.5 py-0.2 text-[10px] font-bold text-[#f6ecd2]">
@@ -257,7 +261,7 @@ export function PeopleRow({
               </span>
             )}
           </div>
-          <div className="flex items-center -space-x-7 px-1 py-1 transition-all hover:-space-x-3">
+          <div className={`flex items-center ${stackOverlap} px-1 py-0.5 transition-all`}>
             {ids.map((cardId, i) => (
               <div
                 key={`${cardId}-${i}`}
