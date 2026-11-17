@@ -1127,9 +1127,10 @@ Points tranchés par le propriétaire de la boîte (ne pas les rouvrir) :
   (`givableRaces`). Sans famille à céder ou à prendre, le pouvoir ne fait rien.
 - **Un elfe ne copie ni fée ni elfe.**
 - **« Pas plus de 7 cartes »** : lu comme décrit ci-dessus, validé.
-
-La fée annule un pouvoir qui **vise** sa joueuse (korrigan, lutin, farfadet,
-dryade, ou l'un d'eux réveillé par un elfe). Le gnome ne vise personne.
+- **La fée** n'annule qu'un pouvoir qui **vise** sa joueuse (korrigan, lutin,
+  farfadet, dryade, ou l'un d'eux réveillé par un elfe), et seules la cible et
+  l'attaquante se répondent. Le gnome ne vise personne et ne s'annule pas. Une
+  fenêtre de fée ouverte à toute la table a été proposée et écartée.
 
 Bots : `facile`, `moyen`, `expert` — une simulation du pouvoir sur un modèle
 public de la table. Mesure (400 duels) : expert bat facile ~65 %, moyen ~57 %.
