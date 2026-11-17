@@ -277,7 +277,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
     case 'elf_copy':
       body = (
         <div className="space-y-2 text-center">
-          <p>{t.elfTitle}</p>
+          <p className="font-semibold text-base text-[color:var(--pp-ink)]">{t.elfTitle}</p>
           <div className="flex flex-wrap justify-center gap-2">
             {payload.races.map((race) => (
               <Card key={race} race={race} t={t} size="md" onClick={() => act({ type: 'ELF_COPY', race })} />
@@ -294,7 +294,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
       ) :
         payload.power === 'dryade' ? (
           <div className="space-y-2">
-            <p className="text-center">{t.dryadTitle}</p>
+            <p className="text-center font-semibold text-base text-[color:var(--pp-ink)]">{t.dryadTitle}</p>
             {targets.map((target) => (
               <div key={target.id} className="rounded-sm bg-[color:var(--pp-well)] p-2">
                 <p className="mb-1 text-sm font-semibold" style={{ color: target.color }}>
@@ -312,7 +312,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
           </div>
         ) : (
           <div className="space-y-2 text-center">
-            <p>{t.targetTitle(withArticle(t, payload.power))}</p>
+            <p className="font-semibold text-base text-[color:var(--pp-ink)]">{t.targetTitle(withArticle(t, payload.power))}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {targets.map((target) => (
                 <button
@@ -323,7 +323,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
                 >
                   <span className="h-3 w-3 rounded-full" style={{ background: target.color }} />
                   <b>{target.name}</b>
-                  <span className="text-xs text-[color:var(--pp-ink)]/70">
+                  <span className="text-xs text-[color:var(--pp-ink-soft)]">
                     {t.cards(target.handCount)} · {t.people} {target.people.length}
                   </span>
                 </button>
@@ -345,30 +345,34 @@ function Decision({ state, me, t, selected, onShuffle }) {
         : t.counterInsist(target);
       body = (
         <div className="space-y-3 text-center">
-          <p className="text-lg font-semibold">{question}</p>
+          <p className="text-lg font-bold text-[color:var(--pp-ink)]">{question}</p>
           {defend && payload.power === 'korrigan' && (
-            <p className="text-sm text-[color:var(--pp-ink)]/75">
+            <p className="text-sm text-[color:var(--pp-ink-soft)] font-medium">
               {t.korriganHint}{' '}
               <button type="button" onClick={onShuffle} className="btn-ghost ml-1 rounded px-2 py-0.5 text-xs">
                 ⤨ {t.shuffle}
               </button>
             </p>
           )}
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2.5">
             <button
               type="button"
               disabled={!hasFairy}
               onClick={() => act({ type: 'PLAY_FAIRY' })}
-              className="btn-gold flex items-center gap-2 rounded-sm px-4 py-2"
+              className="btn-gold flex items-center gap-2 rounded-sm px-5 py-2 font-bold shadow"
             >
-              <span className="text-[#2a3f86]">✦</span> {defend ? t.playFairy : t.counterFairy}
+              <span className="text-[#ffe082]">✦</span> {defend ? t.playFairy : t.counterFairy}
             </button>
             {/* Toujours proposé, avec ou sans fée : on ne trahit pas sa main. */}
-            <button type="button" onClick={() => act({ type: 'DECLINE_FAIRY' })} className="btn-ghost rounded-sm px-4 py-2">
+            <button
+              type="button"
+              onClick={() => act({ type: 'DECLINE_FAIRY' })}
+              className="btn-ghost rounded-sm px-5 py-2 font-medium"
+            >
               {defend ? t.noFairy : t.noCounter}
             </button>
           </div>
-          {!hasFairy && <p className="text-xs italic text-[color:var(--pp-ink)]/50">{t.noFairyInHand}</p>}
+          {!hasFairy && <p className="text-xs italic text-[color:var(--pp-ink-soft)] font-medium">{t.noFairyInHand}</p>}
         </div>
       );
       break;
@@ -381,7 +385,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
         );
       body = (
         <div className="space-y-3 text-center">
-          <p>{t.pickTitle(payload.count, nameOf(state, payload.targetId))}</p>
+          <p className="font-semibold text-base text-[color:var(--pp-ink)]">{t.pickTitle(payload.count, nameOf(state, payload.targetId))}</p>
           <div className="flex flex-wrap justify-center gap-1.5">
             {Array.from({ length: payload.handSize }, (_, i) => (
               <Card key={i} t={t} size="sm" faceDown selected={picked.includes(i)} onClick={() => toggle(i)} />
@@ -391,7 +395,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
             type="button"
             disabled={picked.length !== payload.count}
             onClick={() => act({ type: 'PICK_BLIND', indices: picked })}
-            className="btn-gold rounded-sm px-6 py-2"
+            className="btn-gold rounded-sm px-6 py-2 font-bold"
           >
             {t.confirm}
           </button>
@@ -404,7 +408,7 @@ function Decision({ state, me, t, selected, onShuffle }) {
       body = null;
   }
 
-  return <div className="rounded-sm border-2 border-[color:var(--pp-accent)] bg-[#fbf6e6] p-3 shadow-[inset_0_0_0_3px_#fbf6e6,inset_0_0_0_4px_rgba(125,32,24,.35)]">{body}</div>;
+  return <div className="peuples-paper text-[#2b1d12] rounded-sm p-3.5 shadow-lg">{body}</div>;
 }
 
 /**
