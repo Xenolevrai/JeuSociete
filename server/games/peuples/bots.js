@@ -50,7 +50,7 @@ function standing(table, meId, scoring) {
 }
 
 /** Ce qu'un pouvoir rapporterait, contre une cible donnée (et une carte, pour la dryade). */
-function powerGain(view, meId, power, targetId, cardId) {
+function powerGain(view, meId, power, targetId, cardId, swap = null) {
   const scoring = view.settings.scoring;
   const table = model(view);
   const before = standing(table, meId, scoring);
@@ -70,7 +70,13 @@ function powerGain(view, meId, power, targetId, cardId) {
       [me.hand, them.hand] = [them.hand, me.hand];
       break;
     case 'farfadet':
-      [me.people, them.people] = [them.people, me.people];
+      if (swap) {
+        // Une famille contre une famille (décompte « familles »).
+        const given = me.people.filter((id) => raceOf(id) === swap.give);
+        const taken = them.people.filter((id) => raceOf(id) === swap.take);
+        me.people = [...me.people.filter((id) => raceOf(id) !== swap.give), ...taken];
+        them.people = [...them.people.filter((id) => raceOf(id) !== swap.take), ...given];
+      } else [me.people, them.people] = [them.people, me.people];
       break;
     case 'dryade':
       them.people.splice(them.people.indexOf(cardId), 1);
@@ -83,8 +89,23 @@ function powerGain(view, meId, power, targetId, cardId) {
 }
 
 /** Le meilleur usage d'un pouvoir : sa valeur et la cible qui la donne. */
-function bestUse(view, meId, power) {
+function bestUse(view, meId, power, viaElf = false) {
   const others = view.players.filter((p) => p.id !== meId);
+  if (power === 'farfadet' && view.settings.scoring === 'families') {
+    const me = view.players.find((p) => p.id === meId);
+    const forbidden = viaElf ? 'elfe' : 'farfadet';
+    const gives = [...new Set(me.people.map(raceOf))].filter((r) => r !== forbidden);
+    let best = { value: 0, targetId: null, cardId: null };
+    for (const other of others) {
+      for (const take of new Set(other.people.map(raceOf))) {
+        for (const give of gives) {
+          const value = powerGain(view, meId, power, other.id, null, { give, take });
+          if (!best.targetId || value > best.value) best = { value, targetId: other.id, cardId: null, give, take };
+        }
+      }
+    }
+    return best;
+  }
   let best = { value: power === 'gnome' ? powerGain(view, meId, 'gnome') : 0, targetId: null, cardId: null };
   if (power === 'gnome') return best;
   best = { value: -Infinity, targetId: null, cardId: null };
@@ -114,7 +135,7 @@ function playValue(view, me, race) {
   }
   if (race === 'elfe') {
     const races = [...new Set(me.people.map(raceOf).filter((r) => ELF_COPYABLE.has(r)))];
-    return races.reduce((best, r) => Math.max(best, bestUse(posed, me.id, r).value), 0);
+    return races.reduce((best, r) => Math.max(best, bestUse(posed, me.id, r, true).value), 0);
   }
   return bestUse(posed, me.id, race).value;
 }
@@ -157,30 +178,36 @@ export function decide(view, meId, rng, level = 'moyen') {
       let best = -Infinity;
       let race = races[0];
       for (const r of races) {
-        const value = jitter(rng, bestUse(view, meId, r).value, profile);
+        const value = jitter(rng, bestUse(view, meId, r, true).value, profile);
         if (value > best) [best, race] = [value, r];
       }
       return { type: 'ELF_COPY', race };
     }
 
     case 'choose_target': {
-      const { power, targets } = pending.payload;
-      const use = bestUse(view, meId, power);
-      if (!wild && use.targetId && targets.includes(use.targetId))
-        return { type: 'CHOOSE_TARGET', targetId: use.targetId, cardId: use.cardId };
+      const { power, targets, viaElf, familySwap, give } = pending.payload;
+      const use = bestUse(view, meId, power, viaElf);
+      if (!wild && use.targetId && targets.includes(use.targetId) && (!familySwap || give.includes(use.give)))
+        return { type: 'CHOOSE_TARGET', targetId: use.targetId, cardId: use.cardId, give: use.give, take: use.take };
       const targetId = pickRandom(rng, targets);
       const target = view.players.find((p) => p.id === targetId);
-      return { type: 'CHOOSE_TARGET', targetId, cardId: target.people.length ? pickRandom(rng, target.people) : null };
+      const cardId = target.people.length ? pickRandom(rng, target.people) : null;
+      return familySwap
+        ? { type: 'CHOOSE_TARGET', targetId, give: pickRandom(rng, give), take: raceOf(cardId) }
+        : { type: 'CHOOSE_TARGET', targetId, cardId };
     }
 
     case 'counter': {
       const fairy = me.hand.find((id) => raceOf(id) === 'fee');
       if (!fairy) return { type: 'DECLINE_FAIRY' };
       const { power, attackerId, targetId, cardId, role } = pending.payload;
+      const swap = view.effect?.give ? { give: view.effect.give, take: view.effect.take } : null;
       // Le poids de l'effet pour moi : ce qu'il me coûte si je suis visée, ce
       // qu'il me rapporte si c'est moi qui l'ai lancé.
       const stakes =
-        role === 'defend' ? -powerGain(view, attackerId, power, targetId, cardId) : powerGain(view, meId, power, targetId, cardId);
+        role === 'defend'
+          ? -powerGain(view, attackerId, power, targetId, cardId, swap)
+          : powerGain(view, meId, power, targetId, cardId, swap);
       // Une fée jouée hors tour grossit aussi son peuple : elle n'est jamais
       // tout à fait perdue. Le seuil reflète ce qu'on garde en la gardant.
       const play = wild ? rng.next() < 0.5 : jitter(rng, Math.abs(stakes), profile) > 0.6;

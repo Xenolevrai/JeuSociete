@@ -314,3 +314,50 @@ test('l’expert bat le bot facile plus souvent qu’à son tour', () => {
   }
   assert.ok(wins / N > 0.55, `expert : ${wins}/${N}`);
 });
+
+test('familles : le farfadet échange une famille contre une famille, jamais la sienne', () => {
+  const game = table(['Ana', 'Bea'], {
+    settings: { scoring: 'families' },
+    hands: [['farfadet-1'], ['lutin-1']],
+    people: [['farfadet-2', 'gnome-1', 'gnome-2'], ['fee-1', 'fee-2', 'fee-3', 'elfe-1']],
+    deck: ['x-1'],
+  });
+  ok(game, 'p0', { type: 'PLAY_CARD', cardId: 'farfadet-1' });
+  // Même seule adversaire, on demande : il reste à choisir les familles.
+  assert.equal(game.state.pending.kind, 'choose_target');
+  assert.deepEqual(game.state.pending.payload.give, ['gnome']);
+  assert.equal(dispatch(game, 'p0', { type: 'CHOOSE_TARGET', targetId: 'p1', give: 'farfadet', take: 'fee' }).ok, false);
+  assert.equal(dispatch(game, 'p0', { type: 'CHOOSE_TARGET', targetId: 'p1', give: 'gnome', take: 'dryade' }).ok, false);
+  ok(game, 'p0', { type: 'CHOOSE_TARGET', targetId: 'p1', give: 'gnome', take: 'fee' });
+  ok(game, 'p1', { type: 'DECLINE_FAIRY' });
+  const [ana, bea] = game.state.players;
+  assert.deepEqual([...ana.people].sort(), ['farfadet-1', 'farfadet-2', 'fee-1', 'fee-2', 'fee-3']);
+  assert.deepEqual([...bea.people].sort(), ['elfe-1', 'gnome-1', 'gnome-2']);
+});
+
+test('familles : un elfe qui copie le farfadet peut céder les farfadets, pas les elfes', () => {
+  const game = table(['Ana', 'Bea'], {
+    settings: { scoring: 'families' },
+    hands: [['elfe-1'], ['lutin-1']],
+    people: [['farfadet-1', 'elfe-2'], ['dryade-1']],
+    deck: ['x-1'],
+  });
+  ok(game, 'p0', { type: 'PLAY_CARD', cardId: 'elfe-1' });
+  ok(game, 'p0', { type: 'ELF_COPY', race: 'farfadet' });
+  assert.deepEqual(game.state.pending.payload.give, ['farfadet']);
+  ok(game, 'p0', { type: 'CHOOSE_TARGET', targetId: 'p1', give: 'farfadet', take: 'dryade' });
+  ok(game, 'p1', { type: 'DECLINE_FAIRY' });
+  assert.deepEqual([...game.state.players[0].people].sort(), ['dryade-1', 'elfe-1', 'elfe-2']);
+});
+
+test('familles : sans autre famille que les farfadets, le farfadet ne fait rien', () => {
+  const game = table(['Ana', 'Bea'], {
+    settings: { scoring: 'families' },
+    hands: [['farfadet-1'], ['lutin-1']],
+    people: [['farfadet-2'], ['dryade-1']],
+    deck: ['x-1'],
+  });
+  ok(game, 'p0', { type: 'PLAY_CARD', cardId: 'farfadet-1' });
+  assert.deepEqual(game.state.pending.playerIds, ['p1']);
+  assert.deepEqual(game.state.players[1].people, ['dryade-1']);
+});

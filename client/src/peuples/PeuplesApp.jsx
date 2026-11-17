@@ -62,6 +62,11 @@ function EffectBanner({ state, t }) {
         {target.name}
       </span>
       {effect.cardId && <Card cardId={effect.cardId} t={t} size="xs" />}
+      {effect.give && (
+        <span className="text-sm">
+          {t.racePlural[effect.give]} ⇄ {t.racePlural[effect.take]}
+        </span>
+      )}
       {effect.fairies > 0 && (
         <span className="flex items-center gap-1">
           {Array.from({ length: effect.fairies }, (_, i) => (
@@ -93,6 +98,67 @@ function statusLine(state, t, me) {
     default:
       return t.waitingFor(who);
   }
+}
+
+/**
+ * Le farfadet des familles : on choisit chez qui, quelle famille prendre, et
+ * quelle famille de son propre peuple céder en échange — puis on valide.
+ */
+function FamilySwapPicker({ state, me, t, payload, act }) {
+  const targets = payload.targets.map((id) => state.players.find((p) => p.id === id));
+  const [targetId, setTargetId] = useState(targets.length === 1 ? targets[0].id : null);
+  const [take, setTake] = useState(null);
+  const [give, setGive] = useState(null);
+  const target = targets.find((p) => p.id === targetId);
+  const mine = me.people.filter((id) => payload.give.includes(raceOf(id)));
+  return (
+    <div className="space-y-3">
+      <p className="text-center">{t.swapTitle}</p>
+      {targets.length > 1 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {targets.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => {
+                setTargetId(p.id);
+                setTake(null);
+              }}
+              className={`flex items-center gap-2 rounded-sm px-3 py-1.5 ${p.id === targetId ? 'btn-gold' : 'btn-ghost'}`}
+            >
+              <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />
+              {p.name}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="bg-[color:var(--pp-well)] p-2">
+          <p className="pp-caps mb-1 text-[10px] text-[color:var(--pp-ink-soft)]">
+            {target ? t.swapTake(target.name) : t.swapPickTarget}
+          </p>
+          {target && <PeopleRow people={target.people} t={t} size="sm" pickable onPick={(id) => setTake(raceOf(id))} />}
+          {take && <p className="mt-1 text-sm font-semibold">→ {t.racePlural[take]}</p>}
+        </div>
+        <div className="bg-[color:var(--pp-well)] p-2">
+          <p className="pp-caps mb-1 text-[10px] text-[color:var(--pp-ink-soft)]">{t.swapGive}</p>
+          <PeopleRow people={mine} t={t} size="sm" pickable onPick={(id) => setGive(raceOf(id))} />
+          {give && <p className="mt-1 text-sm font-semibold">← {t.racePlural[give]}</p>}
+          <p className="mt-1 text-xs italic text-[color:var(--pp-ink-soft)]">{t.swapKeeps(t.racePlural[payload.viaElf ? 'elfe' : 'farfadet'])}</p>
+        </div>
+      </div>
+      <div className="text-center">
+        <button
+          type="button"
+          disabled={!targetId || !take || !give}
+          onClick={() => act({ type: 'CHOOSE_TARGET', targetId, give, take })}
+          className="btn-gold rounded-sm px-6 py-2"
+        >
+          {t.confirm}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** La décision attendue de ce poste, posée juste au-dessus de sa main. */
@@ -135,7 +201,9 @@ function Decision({ state, me, t, selected, onShuffle }) {
 
     case 'choose_target': {
       const targets = payload.targets.map((id) => state.players.find((p) => p.id === id));
-      body =
+      body = payload.familySwap ? (
+        <FamilySwapPicker state={state} me={me} t={t} payload={payload} act={act} />
+      ) :
         payload.power === 'dryade' ? (
           <div className="space-y-2">
             <p className="text-center">{t.dryadTitle}</p>
@@ -340,7 +408,7 @@ function Hand({ me, t, selected, setSelected, canPlay, onShuffle }) {
 
 function Table({ game }) {
   const { state, me, mine, leave } = game;
-  const t = useText(state.locale);
+  const t = useText(state.locale, state.settings);
   const [selected, setSelected] = useState(null);
   const [rules, setRules] = useState(false);
   const [recapClosed, setRecapClosed] = useState(false);

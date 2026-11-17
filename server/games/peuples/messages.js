@@ -28,6 +28,10 @@ const MESSAGES = {
     noTarget: ({ name, r }) => `Le pouvoir ${r.of} de ${name} n’a personne sur qui agir.`,
     targets: ({ name, target, r, cardR }) =>
       cardR ? `${name} vise ${cardR.article} du peuple de ${target}.` : `${name} vise ${target} avec ${r.article}.`,
+    targetsFamily: ({ name, target, give, take }) =>
+      `${name} propose ses ${give.plural} contre les ${take.plural} de ${target}.`,
+    farfadetFamily: ({ name, target, give, take }) =>
+      `Le farfadet de ${name} échange ses ${give.plural} contre les ${take.plural} de ${target}.`,
     fairyBlocks: ({ name }) => `${name} joue une fée pour annuler le pouvoir !`,
     fairyCounters: ({ name }) => `${name} contre la fée avec une autre fée !`,
     noFairy: ({ name }) => `${name} ne joue pas de fée.`,
@@ -61,6 +65,9 @@ const MESSAGES = {
     noTarget: ({ name, r }) => `${name}'s ${r.name} has no one to act upon.`,
     targets: ({ name, target, r, cardR }) =>
       cardR ? `${name} targets ${cardR.article} in ${target}'s folk.` : `${name} targets ${target} with ${r.article}.`,
+    targetsFamily: ({ name, target, give, take }) => `${name} offers their ${give.plural} for ${target}'s ${take.plural}.`,
+    farfadetFamily: ({ name, target, give, take }) =>
+      `${name}'s sprite swaps their ${give.plural} for ${target}'s ${take.plural}.`,
     fairyBlocks: ({ name }) => `${name} plays a fairy to cancel the power!`,
     fairyCounters: ({ name }) => `${name} counters the fairy with another fairy!`,
     noFairy: ({ name }) => `${name} plays no fairy.`,
@@ -85,11 +92,12 @@ const FR_OF = { elfe: 'de l’elfe', korrigan: 'du korrigan', fee: 'de la fée',
 function raceWords(locale, race) {
   if (!race) return null;
   const name = peuplesText(locale).race[race];
+  const plural = peuplesText(locale).racePlural[race].toLowerCase();
   if (locale === 'en') {
     const lower = name.toLowerCase();
-    return { name: lower, article: `${/^[aeiou]/.test(lower) ? 'an' : 'a'} ${lower}`, of: lower };
+    return { name: lower, plural, article: `${/^[aeiou]/.test(lower) ? 'an' : 'a'} ${lower}`, of: lower };
   }
-  return { name: name.toLowerCase(), article: FR_ARTICLE[race], of: FR_OF[race] };
+  return { name: name.toLowerCase(), plural, article: FR_ARTICLE[race], of: FR_OF[race] };
 }
 
 export function say(state, key, params = {}) {
@@ -98,6 +106,8 @@ export function say(state, key, params = {}) {
   const words = {
     ...params,
     r: raceWords(locale, params.race),
+    give: raceWords(locale, params.give),
+    take: raceWords(locale, params.take),
     cardR: params.cardId ? raceWords(locale, String(params.cardId).split('-')[0]) : null,
     names: Array.isArray(params.names) ? list(params.names, locale) : params.names,
     races: Array.isArray(params.races)

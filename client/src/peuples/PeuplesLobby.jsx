@@ -11,7 +11,7 @@ import { RulesDialog, VariantsEditor } from './PeuplesPanels.jsx';
 import { PLAYER_COUNT } from '../../../shared/peuples.js';
 
 export default function PeuplesLobby({ state, mine, onLeave }) {
-  const t = useText(state.locale);
+  const t = useText(state.locale, state.settings);
   const [level, setLevel] = useState('moyen');
   const [localName, setLocalName] = useState('');
   const [addingLocal, setAddingLocal] = useState(false);

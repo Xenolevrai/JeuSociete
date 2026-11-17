@@ -45,7 +45,7 @@ invariant est prouvé par `tests/locales.test.js`.
 npm install
 npm run build     # compile le client — à refaire après chaque pull
 npm start         # http://localhost:3000
-npm run check     # lint + 275 tests
+npm run check     # lint + 278 tests
 ```
 
 Node 22+, ESM partout, workspaces npm (racine + `client`).
@@ -1009,7 +1009,7 @@ hypothèquent, enchérissent, tranchent les cartes et négocient, sur les sept
 boîtes et toutes les extensions), la **Mega Edition** (§5 quater — plateau de
 52 cases, table de huit, dé rapide, tickets de bus, gratte-ciels, dépôts,
 règle de majorité), le retour en arrière sur les gestes réversibles (§6 bis),
-la colonne de droite réarrangeable (§7 ter), la ludothèque et Les Sept Peuples (§11 bis), 275 tests.
+la colonne de droite réarrangeable (§7 ter), la ludothèque et Les Sept Peuples (§11 bis), 278 tests.
 
 **Reste à faire**, par ordre de priorité annoncée :
 
@@ -1115,9 +1115,21 @@ Décisions de conception, chacune pour une raison :
   `people` ou `families` (comparaison lexicographique des tailles de familles
   triées : la plus grande, puis la suivante…).
 
-⚠️ Lectures assumées, à confronter à la règle papier : le farfadet part avec le
-peuple qu'il échange ; un elfe ne copie ni fée ni elfe ; « pas plus de 7
-cartes » est lu comme décrit ci-dessus.
+Points tranchés par le propriétaire de la boîte (ne pas les rouvrir) :
+
+- **Farfadet, décompte « plus grand peuple »** : il échange tout le peuple, lui
+  compris.
+- **Farfadet, décompte « familles »** : il échange **une famille contre une
+  famille**, choisies par l'attaquante (invite `choose_target` avec
+  `familySwap`, action `CHOOSE_TARGET { targetId, give, take }`). La famille de
+  la carte utilisée ne se cède pas : pas les farfadets avec un farfadet ; avec
+  un elfe qui copie le farfadet, les farfadets oui, les elfes non
+  (`givableRaces`). Sans famille à céder ou à prendre, le pouvoir ne fait rien.
+- **Un elfe ne copie ni fée ni elfe.**
+- **« Pas plus de 7 cartes »** : lu comme décrit ci-dessus, validé.
+
+La fée annule un pouvoir qui **vise** sa joueuse (korrigan, lutin, farfadet,
+dryade, ou l'un d'eux réveillé par un elfe). Le gnome ne vise personne.
 
 Bots : `facile`, `moyen`, `expert` — une simulation du pouvoir sur un modèle
 public de la table. Mesure (400 duels) : expert bat facile ~65 %, moyen ~57 %.

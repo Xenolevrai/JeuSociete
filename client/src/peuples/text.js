@@ -59,6 +59,11 @@ const UI = {
     elfTitle: "Votre elfe réveille un pouvoir. Lequel ?",
     targetTitle: (race) => `Qui visez-vous avec ${race} ?`,
     dryadTitle: 'Quelle carte la dryade enlève-t-elle ?',
+    swapTitle: 'Votre farfadet échange une famille contre une famille.',
+    swapPickTarget: 'Choisissez une adversaire',
+    swapTake: (n) => `Famille à prendre chez ${n}`,
+    swapGive: 'Famille à céder',
+    swapKeeps: (r) => `Les ${r.toLowerCase()} ne se cèdent pas : c'est leur pouvoir que vous utilisez.`,
     counterDefend: (attacker, race) => `${attacker} vous vise avec ${race}.`,
     counterInsist: (target) => `${target} a joué une fée pour annuler votre pouvoir.`,
     counterDefendAgain: (attacker) => `${attacker} a contré votre fée avec une fée !`,
@@ -146,6 +151,11 @@ const UI = {
     elfTitle: 'Your elf awakens a power. Which one?',
     targetTitle: (race) => `Who do you target with ${race}?`,
     dryadTitle: 'Which card does the dryad take?',
+    swapTitle: 'Your sprite swaps one family for another.',
+    swapPickTarget: 'Pick an opponent',
+    swapTake: (n) => `Family to take from ${n}`,
+    swapGive: 'Family to give',
+    swapKeeps: (r) => `${r} cannot be given: you are using their power.`,
     counterDefend: (attacker, race) => `${attacker} targets you with ${race}.`,
     counterInsist: (target) => `${target} played a fairy to cancel your power.`,
     counterDefendAgain: (attacker) => `${attacker} countered your fairy with a fairy!`,
@@ -181,9 +191,17 @@ const UI = {
   },
 };
 
-export function useText(locale = 'fr') {
+/**
+ * Les mots de la table. Avec les réglages de la partie, le texte imprimé sur
+ * le farfadet suit le décompte choisi : aux familles, il n'échange plus tout
+ * le peuple, et la carte doit le dire.
+ */
+export function useText(locale = 'fr', settings = null) {
   const lang = locale === 'en' ? 'en' : 'fr';
-  return { ...UI[lang], ...peuplesText(lang), lang };
+  const shared = peuplesText(lang);
+  const power =
+    settings?.scoring === 'families' ? { ...shared.power, farfadet: shared.farfadetFamilies } : shared.power;
+  return { ...UI[lang], ...shared, power, lang };
 }
 
 /** « un korrigan », « a korrigan » — pour les phrases des invites. */

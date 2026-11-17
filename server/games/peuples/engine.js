@@ -267,9 +267,28 @@ function playCard(state, player, cardId) {
   return { ok: true };
 }
 
+/**
+ * Au décompte « familles », le farfadet n'échange pas tout le peuple : il
+ * troque **une famille contre une famille**. Celle de la carte qui a déclenché
+ * le pouvoir ne se cède pas — on ne donne pas le farfadet qu'on vient
+ * d'utiliser, ni, si un elfe a réveillé ce pouvoir, la famille des elfes (la
+ * famille des farfadets, elle, devient alors échangeable).
+ */
+export const familySwap = (state) => state.settings.scoring === 'families';
+
+export function givableRaces(player, viaElf) {
+  const forbidden = viaElf ? 'elfe' : 'farfadet';
+  return [...new Set(player.people.map(raceOf))].filter((race) => race !== forbidden);
+}
+
 /** Les cibles possibles d'un pouvoir : celles sur qui il peut réellement agir. */
-export function targetsFor(state, player, power) {
+export function targetsFor(state, player, power, viaElf = false) {
   const others = state.players.filter((p) => p.id !== player.id);
+  if (power === 'farfadet' && familySwap(state)) {
+    // Rien à donner, ou rien à prendre : l'échange est impossible.
+    if (!givableRaces(player, viaElf).length) return [];
+    return others.filter((p) => p.people.length > 0);
+  }
   switch (power) {
     case 'korrigan':
       return others.filter((p) => p.hand.length > 0);
@@ -309,29 +328,33 @@ function applyPower(state, player, power, viaElf) {
   }
 
   // Un pouvoir qui vise une adversaire.
-  const targets = targetsFor(state, player, power);
+  const targets = targetsFor(state, player, power, viaElf);
   if (!targets.length) {
     log(state, 'power', say(state, 'noTarget', { name: player.name, race: power }), { playerId: player.id });
     return endTurn(state);
   }
+  const swap = power === 'farfadet' && familySwap(state);
   // Une seule adversaire possible : inutile de demander qui viser — sauf pour
-  // la dryade, qui doit encore choisir quelle carte prendre.
-  if (targets.length === 1 && power !== 'dryade') return aim(state, player, power, viaElf, targets[0].id, null);
+  // la dryade, qui doit encore choisir quelle carte prendre, et pour le
+  // farfadet des familles, qui choisit encore quoi donner et quoi prendre.
+  if (targets.length === 1 && power !== 'dryade' && !swap)
+    return aim(state, player, power, viaElf, targets[0].id, null);
   setPending(state, 'choose_target', [player.id], {
     power,
     viaElf,
     targets: targets.map((p) => p.id),
+    ...(swap ? { familySwap: true, give: givableRaces(player, viaElf) } : {}),
   });
 }
 
 /** La cible est désignée : on ouvre la fenêtre de la fée, toujours. */
-function aim(state, player, power, viaElf, targetId, cardId) {
+function aim(state, player, power, viaElf, targetId, cardId, families = null) {
   const target = playerById(state, targetId);
-  state.effect = { power, viaElf, attackerId: player.id, targetId, cardId, fairies: 0 };
-  log(state, 'target', say(state, 'targets', { name: player.name, target: target.name, race: power, cardId }), {
-    playerId: player.id,
-    targetId,
-  });
+  state.effect = { power, viaElf, attackerId: player.id, targetId, cardId, fairies: 0, ...(families ?? {}) };
+  const words = families
+    ? say(state, 'targetsFamily', { name: player.name, target: target.name, give: families.give, take: families.take })
+    : say(state, 'targets', { name: player.name, target: target.name, race: power, cardId });
+  log(state, 'target', words, { playerId: player.id, targetId });
   askCounter(state, targetId);
 }
 
@@ -414,6 +437,22 @@ function resolveEffect(state) {
       return endTurn(state);
     }
     case 'farfadet': {
+      if (state.effect.give) {
+        // Une famille contre une famille, comptées au moment de l'échange :
+        // les fées jouées pendant la chaîne en font partie si l'on troque les fées.
+        const { give, take } = state.effect;
+        const given = attacker.people.filter((id) => raceOf(id) === give);
+        const taken = target.people.filter((id) => raceOf(id) === take);
+        attacker.people = [...attacker.people.filter((id) => raceOf(id) !== give), ...taken];
+        target.people = [...target.people.filter((id) => raceOf(id) !== take), ...given];
+        log(
+          state,
+          'power',
+          say(state, 'farfadetFamily', { name: attacker.name, target: target.name, give, take, n: given.length, m: taken.length }),
+          { playerId: attacker.id, targetId },
+        );
+        return endTurn(state);
+      }
       [attacker.people, target.people] = [target.people, attacker.people];
       log(state, 'power', say(state, 'farfadetSwap', { name: attacker.name, target: target.name }), {
         playerId: attacker.id,
@@ -577,12 +616,20 @@ function applyAction(state, rng, player, action) {
       const { power, viaElf, targets } = pending.payload;
       if (!targets.includes(action.targetId)) return refuse('Cible impossible.');
       let cardId = null;
+      let families = null;
       if (power === 'dryade') {
         cardId = action.cardId;
         if (!playerById(state, action.targetId).people.includes(cardId))
           return refuse('Choisissez une carte de son peuple.');
       }
-      aim(state, player, power, viaElf, action.targetId, cardId);
+      if (pending.payload.familySwap) {
+        const { give, take } = action;
+        if (!pending.payload.give.includes(give)) return refuse('Choisissez une famille de votre peuple à céder.');
+        if (!playerById(state, action.targetId).people.some((id) => raceOf(id) === take))
+          return refuse('Choisissez une famille de son peuple à prendre.');
+        families = { give, take };
+      }
+      aim(state, player, power, viaElf, action.targetId, cardId, families);
       return { ok: true };
     }
 

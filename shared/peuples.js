@@ -107,6 +107,8 @@ const TEXT = {
       gnome: 'Piochez deux cartes supplémentaires.',
       dryade: "Volez une carte déjà posée par une adversaire et ajoutez-la à votre peuple.",
     },
+    /** Le texte du farfadet quand on compte les familles. */
+    farfadetFamilies: "Échangez une famille de votre peuple contre une famille d'une adversaire.",
     variant: {
       handCap: {
         label: 'Pas plus de 7 cartes',
@@ -123,7 +125,7 @@ const TEXT = {
         peopleHelp: "Le peuple qui compte le plus d'individus l'emporte, quelle que soit leur race.",
         families: 'Les familles',
         familiesHelp:
-          "Comme au jeu des 7 familles : on compare la plus grande famille de chacune (8 = famille complète), puis la suivante, et ainsi de suite.",
+          "Comme au jeu des 7 familles : on compare la plus grande famille de chacune (8 = famille complète), puis la suivante, et ainsi de suite. Le farfadet échange alors une famille contre une famille.",
       },
     },
     rules: [
@@ -136,8 +138,9 @@ const TEXT = {
     ],
     readings: [
       'Le korrigan prend deux cartes à l’aveugle : sa victime peut mélanger ou réordonner sa main jusqu’au moment où il choisit.',
-      'Le farfadet fait partie du peuple qu’il échange : posé avant d’agir, il part avec lui.',
-      'Un elfe ne réutilise ni une fée ni un autre elfe : la première n’a d’effet qu’en défense, le second tournerait sans fin.',
+      'Au décompte « plus grand peuple », le farfadet échange tout le peuple, lui compris : posé avant d’agir, il part avec lui.',
+      'Au décompte « familles », le farfadet échange une famille de son peuple contre une famille de l’adversaire, au choix. On ne cède jamais la famille de la carte utilisée : pas les farfadets avec un farfadet ; avec un elfe qui copie le farfadet, on peut céder les farfadets mais pas les elfes.',
+      'Un elfe ne réutilise ni une fée ni un autre elfe : la fée n’agit qu’en réponse à une attaque, et un elfe qui copie un elfe tournerait sans fin.',
     ],
   },
   en: {
@@ -170,6 +173,7 @@ const TEXT = {
       gnome: 'Draw two extra cards.',
       dryade: 'Steal a card already played by an opponent and add it to your folk.',
     },
+    farfadetFamilies: 'Swap one family of your folk for one family of an opponent’s.',
     variant: {
       handCap: {
         label: 'No more than 7 cards',
@@ -186,7 +190,7 @@ const TEXT = {
         peopleHelp: 'The folk with the most members wins, whatever their kind.',
         families: 'Families',
         familiesHelp:
-          'Like Happy Families: compare everyone’s largest family (8 = complete), then the next one, and so on.',
+          'Like Happy Families: compare everyone’s largest family (8 = complete), then the next one, and so on. The sprite then swaps one family for another.',
       },
     },
     rules: [
@@ -199,8 +203,9 @@ const TEXT = {
     ],
     readings: [
       'The korrigan picks two cards blind: the victim may shuffle or reorder their hand until the moment it picks.',
-      'The sprite is part of the folk it swaps: played before acting, it goes with it.',
-      'An elf copies neither a fairy nor another elf: the first only works in defence, the second would loop forever.',
+      'With “largest folk” scoring, the sprite swaps the whole folk, itself included: played before acting, it goes with it.',
+      'With “families” scoring, the sprite swaps one family of its folk for one of the opponent’s, as chosen. The family of the card being used is never given: no sprites with a sprite; with an elf copying the sprite, sprites may go but elves may not.',
+      'An elf copies neither a fairy nor another elf: a fairy only answers an attack, and an elf copying an elf would loop forever.',
     ],
   },
 };
