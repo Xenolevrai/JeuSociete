@@ -137,6 +137,14 @@ export function Settings({ view }) {
           disabled={!isHost}
         />
         <Choice
+          label="Poser une mauvaise carte"
+          hint="cartes piochées en pénalité"
+          value={s.wrongSnapPenalty}
+          options={[1, 2]}
+          onChange={(v) => set({ wrongSnapPenalty: v })}
+          disabled={!isHost}
+        />
+        <Choice
           label="Temps par tour"
           hint="ensuite, le tour se joue tout seul"
           value={s.turnSeconds}

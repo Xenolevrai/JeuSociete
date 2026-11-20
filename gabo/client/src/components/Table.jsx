@@ -10,7 +10,7 @@
  * ouverte, toucher une carte — la sienne ou celle d'une autre — c'est la
  * poser. À la table, on ne demande pas la permission avant de taper la carte.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { act, socket } from '../lib/socket.js';
 import { useNow } from '../lib/useGabo.js';
 import { definite, indefinite, POWER_TEXT } from '../lib/cards.js';
@@ -40,6 +40,9 @@ export default function Table({ view, receivedAt, marks, reactions, onRules, onL
   const [swapTarget, setSwapTarget] = useState(null);
   const [gaboArmed, setGaboArmed] = useState(false);
   const [talkOpen, setTalkOpen] = useState(false);
+  // Le premier toucher d'un double toucher : quelle carte, et quand.
+  const [primed, setPrimed] = useState(null);
+  const primedAt = useRef(0);
 
   const stepKey = `${round.number}:${turn?.playerId}:${turn?.stage}:${round.discardCount}`;
   useEffect(() => {
@@ -62,10 +65,32 @@ export default function Table({ view, receivedAt, marks, reactions, onRules, onL
   }, [round.seats, view.you]);
   const spectators = view.players.filter((p) => !round.seats.includes(p.id));
 
+  /**
+   * Poser une carte se fait d'un DOUBLE toucher : rapide quand on sait, mais
+   * jamais par accident — un toucher seul ne fait que la soulever. Le jeu ne
+   * suggère rien : toutes les cartes se touchent pareil, à chacune de se
+   * souvenir où est son 2.
+   */
+  const tapToSnap = (ownerId, slot) => {
+    const key = `${ownerId}:${slot}`;
+    const now = Date.now();
+    if (primed === key && now - primedAt.current < 600) {
+      setPrimed(null);
+      return act({ type: 'SNAP', ownerId, slot });
+    }
+    primedAt.current = now;
+    setPrimed(key);
+    setTimeout(() => setPrimed((p) => (p === key ? null : p)), 650);
+    return undefined;
+  };
+  useEffect(() => {
+    if (!snap) setPrimed(null);
+  }, [snap]);
+
   // — Toucher une de ses cartes —
   const mineTouchable = canSnap || (stage === 'start' && takingDiscard) || stage === 'drawn' || power === 'peekOwn' || power === 'swap';
   const pickMine = (slot) => {
-    if (canSnap) return act({ type: 'SNAP', ownerId: view.you, slot });
+    if (canSnap) return tapToSnap(view.you, slot);
     if (stage === 'start' && takingDiscard) return act({ type: 'TAKE_DISCARD', slot });
     if (stage === 'drawn') return act({ type: 'SWAP_HELD', slot });
     if (power === 'peekOwn') return act({ type: 'USE_POWER', target: { slot } });
@@ -75,7 +100,7 @@ export default function Table({ view, receivedAt, marks, reactions, onRules, onL
   // — Toucher une carte d'une autre —
   const theirsTouchable = canSnap || power === 'peekOther' || power === 'swap';
   const pickTheirs = (ownerId) => (slot) => {
-    if (canSnap) return act({ type: 'SNAP', ownerId, slot });
+    if (canSnap) return tapToSnap(ownerId, slot);
     if (power === 'peekOther') return act({ type: 'USE_POWER', target: { ownerId, slot } });
     if (power === 'swap') return setSwapTarget((t) => (t?.ownerId === ownerId && t.slot === slot ? null : { ownerId, slot }));
     return undefined;
@@ -122,7 +147,9 @@ export default function Table({ view, receivedAt, marks, reactions, onRules, onL
             ready={round.ready.includes(id)}
             touchable={theirsTouchable}
             onPick={pickTheirs(id)}
-            chosenSlot={swapTarget?.ownerId === id ? swapTarget.slot : null}
+            chosenSlot={
+              primed?.startsWith(`${id}:`) ? Number(primed.split(':')[1]) : swapTarget?.ownerId === id ? swapTarget.slot : null
+            }
             marks={marks}
             expired={expired}
             said={reactions.filter((r) => r.playerId === id)}
@@ -182,7 +209,7 @@ export default function Table({ view, receivedAt, marks, reactions, onRules, onL
                 ownerId={view.you}
                 isTouchable={() => mineTouchable}
                 onPick={pickMine}
-                chosenSlot={swapOwn}
+                chosenSlot={primed?.startsWith(`${view.you}:`) ? Number(primed.split(':')[1]) : swapOwn}
                 marks={marks}
                 expired={expired}
                 gap="0.22em"
@@ -411,7 +438,7 @@ function SnapLine({ snap, view, byId, now, receivedAt, canSnap }) {
   let text;
   if (claimer) text = `${claimer.id === view.you ? 'Tu as' : `${claimer.name} a`} posé ${snap.count} carte${snap.count > 1 ? 's' : ''}.`;
   else if (snap.discarderId === view.you) text = `Les autres peuvent poser ${what}.`;
-  else if (canSnap) text = `Défausse ouverte sur ${what} : touche une carte pour la poser.`;
+  else if (canSnap) text = `Défausse ouverte sur ${what}. Touche deux fois une carte pour la poser.`;
   else text = `${discarder?.name ?? '?'} a jeté ${what}.`;
   return (
     <div className="rise w-full px-2">

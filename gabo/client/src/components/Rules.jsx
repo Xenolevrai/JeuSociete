@@ -36,9 +36,9 @@ export default function Rules({ onClose, settings }) {
         <p>Dès qu'une joueuse jette une carte pendant son tour, <b>les autres</b> peuvent poser dessus une, deux ou trois cartes <b>de la même valeur</b> prises dans leur jeu (un 7 sur un 7, un roi sur un roi…).</p>
         <ul className="mt-2 ml-5 list-disc space-y-1">
           <li>La plus rapide l'emporte : une fois qu'une joueuse a posé, les autres gardent leur carte.</li>
-          <li>Tu te trompes ? La carte est montrée à toute la table, reprend sa place, et tu <b>pioches une carte de pénalité</b>.</li>
+          <li>Tu te trompes ? Ta carte <b>reste sur la défausse</b> et tu <b>pioches {settings?.wrongSnapPenalty ?? 2} cartes</b> que tu ne connais pas. (Si c'était la carte d'une autre, elle lui revient, montrée à toute la table — et c'est toi qui pioches.)</li>
           <li>Tu peux aussi poser une carte <b>d'une adversaire</b> si tu sais qu'elle correspond : elle part à la défausse et cette adversaire <b>pioche {settings?.opponentSnapPenalty ?? 2} cartes</b> face cachée.</li>
-          <li>En ligne, la défausse reste ouverte quelques secondes ({settings?.snapSeconds ?? 5} s) — un trait se consume sous la défausse. Pendant ce temps, <b>toucher une carte, c'est la poser</b> : la tienne, ou celle d'une autre.</li>
+          <li>En ligne, la défausse reste ouverte quelques secondes ({settings?.snapSeconds ?? 5} s) — un trait se consume sous la défausse. Pendant ce temps, <b>touche deux fois une carte pour la poser</b> : la tienne, ou celle d'une autre. Le jeu ne te dit pas où est ta carte : à toi de t'en souvenir.</li>
           <li>Pour poser la carte d'une autre, il faut la connaître : c'est à ça que servent les 9 et les 10.</li>
         </ul>
 

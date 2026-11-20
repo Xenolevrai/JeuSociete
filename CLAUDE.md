@@ -1146,15 +1146,24 @@ bots.
 9. La partie se joue **en manches** : chaque manche a sa gagnante, la table
    tient le compte (victoires et points cumulés).
 
-### La défausse rapide se joue d'un seul geste
+### La défausse rapide se joue d'un double toucher
 
-Pendant que la défausse est ouverte, **toucher une carte, c'est la poser** —
-la sienne ou celle d'une autre, sans bouton « poser » à armer avant. À la
-table, on ne demande pas la permission avant de taper la carte ; un geste en
-deux temps faisait perdre la course. Aucune autre action n'étant possible
-pendant la fenêtre, il n'y a pas de toucher ambigu. Les cartes touchables sont
-soulevées et cernées d'un pointillé ; une pose ratée tremble, une pénalité
-arrive marquée « +1 ».
+Pendant que la défausse est ouverte, **toucher deux fois une carte la pose** —
+la sienne ou celle d'une autre. Un toucher seul ne fait que la soulever : on
+va vite quand on sait, sans jamais poser par accident. Le jeu **ne suggère
+rien** : toutes les cartes se touchent pareil, à chacune de se souvenir où est
+son 2 (demande explicite de la table).
+
+**Une erreur coûte cher**, comme à la table : sa propre carte posée à tort
+**reste sur la défausse**, et l'on pioche **deux cartes** inconnues
+(`wrongSnapPenalty`, réglable à une). Les pénalités sont distribuées *avant*
+de vider la place, pour ne pas venir s'y glisser — on croirait la carte
+revenue. La carte d'une autre posée à tort, elle, lui revient (montrée à
+toutes) : on ne lui ferait pas cadeau d'une carte en moins.
+
+Une carte regardée (coup d'œil du début, 7-8, 9-10, Valet-Dame) **se
+retourne** d'elle-même : au « c'est retenu » du début, après quatre secondes
+pour un pouvoir. Seul l'aide-mémoire, éteint par défaut, les laisse visibles.
 
 ### Le design : une partie sur le tapis d'un café
 

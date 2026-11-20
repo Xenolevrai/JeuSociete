@@ -44,6 +44,8 @@ export const DEFAULT_SETTINGS = {
   memoryAid: false,
   /** Cartes reçues par celle dont on a posé une carte avec succès. */
   opponentSnapPenalty: 2,
+  /** Cartes piochées par qui pose une mauvaise carte. */
+  wrongSnapPenalty: 2,
   /** Cartes posées au plus sur une même défausse. */
   maxSnapCards: 3,
   /** Temps de réflexion par tour, en secondes (0 : illimité). Au-delà, le tour se joue tout seul. */
@@ -55,6 +57,7 @@ const ALLOWED = {
   snapSeconds: [3, 4, 5, 6, 8, 10, 15],
   memoryAid: [true, false],
   opponentSnapPenalty: [1, 2],
+  wrongSnapPenalty: [1, 2],
   maxSnapCards: [1, 2, 3],
   turnSeconds: [0, 30, 60, 120],
 };
@@ -534,15 +537,27 @@ function actSnap(state, actorId, action, ctx) {
   const where = mine ? 'une de ses cartes' : `une carte de ${name(state, ownerId)}`;
 
   if (!sameRank(card, snap.card)) {
-    // Erreur : la carte est montrée à toute la table, reprend sa place, et
-    // l'étourdie écope d'une carte de plus.
-    reveal(state, null, [{ ownerId, slot }], ctx.now + WRONG_SNAP_MS, 'wrong', ctx.rng);
-    for (const id of round.seats) remember(state, id, card.id, ctx.rng);
-    const penalty = givePenalty(state, actorId, 1, ctx.rng);
+    // Erreur. Sa propre carte, une fois posée, reste sur la défausse — comme à
+    // la table, on ne la reprend pas — et l'étourdie pioche deux cartes
+    // qu'elle ne connaît pas. La carte d'une autre, elle, est montrée à tous
+    // et lui revient : on ne lui ferait pas cadeau d'une carte en moins.
+    // Les pénalités tombent AVANT de vider la place : elles ne doivent pas
+    // venir s'y glisser, on croirait la carte revenue.
+    const penalty = givePenalty(state, actorId, state.settings.wrongSnapPenalty, ctx.rng);
+    if (mine) {
+      grid[slot] = null;
+      round.discard.push(card);
+    } else {
+      reveal(state, null, [{ ownerId, slot }], ctx.now + WRONG_SNAP_MS, 'wrong', ctx.rng);
+      for (const id of round.seats) remember(state, id, card.id, ctx.rng);
+    }
+    const what = mine
+      ? `${cardTheName(card)} reste sur la défausse`
+      : `la carte retourne chez ${name(state, ownerId)}`;
     log(
       state,
       'snapWrong',
-      `${name(state, actorId)} pose ${where} : ${cardTheName(card)}, ce n'est pas ${aRank(snap.card)} ! La carte reprend sa place et ${name(state, actorId)} pioche une pénalité.`,
+      `${name(state, actorId)} pose ${where} : ${cardTheName(card)}, ce n'est pas ${aRank(snap.card)} ! ${what[0].toUpperCase()}${what.slice(1)} et ${name(state, actorId)} pioche ${plural(penalty.length, 'carte')} de pénalité.`,
       { playerId: actorId, slots: [{ ownerId, slot }, ...penalty], card: publicCard(card), wrong: true },
     );
     return ok();

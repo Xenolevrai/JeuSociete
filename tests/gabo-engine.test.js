@@ -245,7 +245,7 @@ test('défausse rapide : celle qui vient de jeter ne pose pas', () => {
   assert.equal(dispatch(state, 'p0', { type: 'SNAP', ownerId: 'p0', slot: 0 }, ctx()).ok, false);
 });
 
-test('défausse rapide : une erreur est montrée à toutes et coûte une carte', () => {
+test('défausse rapide : sa propre carte posée à tort reste au milieu, et coûte deux cartes inconnues', () => {
   const { state, ctx, clock } = setup(3);
   setGrid(state, 'p1', [c('6', 'H', '6h'), c('5'), c('4'), c('3')]);
   state.round.drawPile.push(c('7', 'D'));
@@ -253,11 +253,25 @@ test('défausse rapide : une erreur est montrée à toutes et coûte une carte',
   dispatch(state, 'p0', { type: 'DISCARD_HELD' }, ctx());
   dispatch(state, 'p0', { type: 'SKIP_POWER' }, ctx());
   assert.equal(dispatch(state, 'p1', { type: 'SNAP', ownerId: 'p1', slot: 0 }, ctx()).ok, true);
-  assert.equal(state.round.grids.p1[0].id, '6h', 'la carte reprend sa place');
-  assert.equal(state.round.grids.p1.length, 5, 'une carte de pénalité');
-  assert.equal(viewFor(state, 'p2', clock.now).round.grids.p1[0].rank, '6', 'toute la table la voit');
-  assert.ok(viewFor(state, 'p1', clock.now).round.grids.p1[4].down, 'la pénalité est cachée, même à sa propriétaire');
+  assert.equal(state.round.discard.at(-1).id, '6h', 'la carte reste sur la défausse');
+  assert.equal(state.round.grids.p1[0], null, 'sa place reste vide : aucune pénalité ne vient s’y glisser');
+  assert.equal(state.round.grids.p1.filter(Boolean).length, 5, '4 − 1 + 2');
+  const view = viewFor(state, 'p1', clock.now);
+  assert.ok(view.round.grids.p1.filter(Boolean).every((x) => x.down), 'les pénalités sont cachées, même à leur propriétaire');
   assert.equal(state.round.snap.claimedBy, null, "une erreur ne ferme pas la défausse aux autres");
+});
+
+test("défausse rapide : la carte d'une autre posée à tort lui revient, montrée à toutes", () => {
+  const { state, ctx, clock } = setup(3);
+  setGrid(state, 'p2', [c('6', 'H', '6h'), c('5'), c('4'), c('3')]);
+  state.round.drawPile.push(c('7', 'D'));
+  dispatch(state, 'p0', { type: 'DRAW' }, ctx());
+  dispatch(state, 'p0', { type: 'DISCARD_HELD' }, ctx());
+  dispatch(state, 'p0', { type: 'SKIP_POWER' }, ctx());
+  assert.equal(dispatch(state, 'p1', { type: 'SNAP', ownerId: 'p2', slot: 0 }, ctx()).ok, true);
+  assert.equal(state.round.grids.p2[0].id, '6h');
+  assert.equal(viewFor(state, 'p0', clock.now).round.grids.p2[0].rank, '6');
+  assert.equal(state.round.grids.p1.filter(Boolean).length, 6, 'celle qui s’est trompée pioche deux cartes');
 });
 
 test("défausse rapide sur la carte d'une adversaire : elle part, l'adversaire pioche deux cartes", () => {
