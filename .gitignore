@@ -7,3 +7,5 @@ server/data/
 *.exe
 # Les parties archivées : ~500 Ko chacune, et ce sont nos parties de famille.
 data/archives/*.jsonl
+gabo/client/dist/
+gabo/server/data/

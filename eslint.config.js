@@ -8,7 +8,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['**/node_modules/**', 'client/dist/**'],
+    ignores: ['**/node_modules/**', 'client/dist/**', 'gabo/client/dist/**'],
   },
   {
     files: ['**/*.js', '**/*.jsx'],

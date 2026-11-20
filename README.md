@@ -1,5 +1,9 @@
 # Monopoly — la plateforme multijoueur en temps réel
 
+> **Nouveau : le Gabo**, jeu de cartes de mémoire et de réflexes, de 2 à 8
+> joueuses, servi par le même serveur sous `/gabo/`. Règles et architecture :
+> `CLAUDE.md` §13.
+
 Plusieurs boîtes de Monopoly, jouables à 2-6 depuis un navigateur, sur le même
 wifi ou à distance.
 

@@ -508,6 +508,13 @@ export function Home({ error }) {
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="panel w-full max-w-lg space-y-5 rounded-xl p-7">
         <Logo edition={edition} />
+        {/* L'autre jeu servi par le même serveur, au même lien. */}
+        <a
+          href="/gabo/"
+          className="block text-center font-condensed text-[12px] uppercase tracking-widest text-ink-soft underline-offset-4 hover:underline"
+        >
+          {t('playGabo')}
+        </a>
 
         <label className="block font-condensed text-[11px] uppercase tracking-widest text-ink-soft">
           {t('yourName')}

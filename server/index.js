@@ -15,6 +15,7 @@ import { Server } from 'socket.io';
 import { registerSocketHandlers, lobbyInfo } from './sockets.js';
 import { restoreRooms, purgeStaleRooms, getRoom, roomCount, listRooms } from './rooms.js';
 import { getEdition, DEFAULT_EDITION } from '../shared/index.js';
+import { attachGabo } from '../gabo/server/index.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -49,6 +50,11 @@ app.get('/api/game/:code', (req, res) => {
   });
 });
 
+// — Le Gabo, jeu de cartes, sous /gabo/ ——————————————————————————
+// Branché AVANT le client du Monopoly : sa route « tout le reste » avalerait
+// sinon les adresses du Gabo.
+await attachGabo(app, io);
+
 // — Client compilé ————————————————————————————————————————
 app.use(express.static(CLIENT_DIST));
 app.get(/^\/(?!api\/|socket\.io\/).*/, (req, res) => {
@@ -75,6 +81,7 @@ server.listen(PORT, HOST, () => {
   console.log(`\n  Monopoly Paris — serveur démarré`);
   console.log(`  Sur cet ordinateur : http://localhost:${PORT}`);
   for (const address of localAddresses()) console.log(`  Pour les autres    : ${address}`);
+  console.log(`  Le Gabo            : http://localhost:${PORT}/gabo/`);
   console.log('');
 });
 

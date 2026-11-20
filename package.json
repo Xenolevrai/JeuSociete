@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Monopoly classique (édition française) multijoueur en temps réel",
+  "description": "Monopoly multijoueur en temps réel, et le Gabo (jeu de cartes)",
   "engines": {
     "node": ">=22"
   },
@@ -11,7 +11,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "dev:client": "npm run dev --workspace client",
-    "build": "npm run build --workspace client",
+    "build": "npm run build --workspace client && npm run build --workspace gabo/client",
     "test": "node --test",
     "lint": "eslint .",
     "check": "npm run lint && npm test"
@@ -27,6 +27,7 @@
     "socket.io-client": "^4.8.3"
   },
   "workspaces": [
-    "client"
+    "client",
+    "gabo/client"
   ]
 }

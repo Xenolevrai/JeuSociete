@@ -97,6 +97,7 @@ server/
   engine/speeddie.js   troisième dé, tickets de bus, déplacements différés
   rooms.js             registre des parties, codes, sauvegarde disque
   sockets.js           passerelle Socket.io ↔ moteur
+  (index.js branche aussi le Gabo : voir §13)
   archive.js           carnet des parties terminées, pour entraîner (voir §7 quinquies)
   bots/                les joueuses artificielles (voir §5 ter)
 scripts/               train-bots.mjs · tune-bots.mjs · stats-archives.mjs
@@ -1063,3 +1064,106 @@ la colonne de droite réarrangeable (§7 ter), 253 tests.
   Ne pas ouvrir de pull request sans demande explicite.
 - Ne jamais écrire de nom de modèle dans un commit, un commentaire ou un
   document du dépôt.
+
+---
+
+## 13. Le Gabo — un second jeu, un jeu de cartes (`gabo/`)
+
+Un jeu de mémoire et de réflexes à 54 cartes (variante du Tamalou / Cabo),
+de 2 à 8 joueuses, servi par **le même serveur, au même port, au même lien** :
+`http://…/gabo/`. Il ne partage aucune ligne de moteur avec le Monopoly — seul
+`server/index.js` le branche (`attachGabo`), *avant* la route « tout le reste »
+du client Monopoly, qui avalerait sinon ses adresses.
+
+```
+gabo/
+  engine/   cards.js · game.js (règles) · view.js (ce que chacune voit) · bot.js · simulate.js · rng.js
+  server/   index.js (branchement) · rooms.js (registre, sauvegarde disque) · sockets.js (espace /gabo)
+  client/   app React/Vite servie sous /gabo/ (base Vite `/gabo/`, port de dev 5174)
+tests/      gabo-engine.test.js · gabo-server.test.js
+```
+
+`npm run build` compile les deux clients. En développement :
+`node server/index.js` puis `cd gabo/client && npx vite --host` (5174).
+
+### Ce qui change par rapport au Monopoly : l'information cachée
+
+**L'état complet ne quitte jamais le serveur.** Chaque socket reçoit
+`viewFor(state, sonJoueur, now)` (`view.js`) : une carte cachée y est
+littéralement `{ down: true }` — ni rang, ni couleur, **ni identifiant**
+(sinon un client modifié pourrait suivre une carte mieux qu'une mémoire
+humaine). Un test relit la vue de chaque joueuse à la recherche de tout
+identifiant de carte : **ne jamais ajouter de champ à une vue sans repasser
+ce test.**
+
+Une carte n'est visible que par un *dévoilement* (`round.reveals`) : coup
+d'œil initial (jusqu'à « j'ai mémorisé »), pouvoir 7-8 / 9-10 / Valet-Dame
+(quatre secondes), défausse ratée (toute la table, trois secondes et demie).
+La vue transmet `remainingMs` plutôt qu'une heure absolue : les horloges des
+téléphones ne sont pas celles du serveur.
+
+`round.seen[joueuse]` liste les cartes qu'elle a vues. Il sert à deux choses
+seulement : l'**aide-mémoire** (réglage, éteint par défaut) et la mémoire
+**faillible** des bots (`player.memory`, 1 pour une humaine, 0,55 à 0,97 pour
+un bot) — le serveur n'abîme jamais la mémoire d'une humaine.
+
+### Le temps : une minuterie par table
+
+La **défausse rapide** (« poser sur la défausse ») se joue au réflexe à la
+table ; en ligne, il faut une fenêtre visible par toutes, sinon la plus proche
+du serveur gagnerait toujours. Après chaque défausse de tour, `round.snap`
+reste ouvert `snapSeconds` (réglable, 5 s par défaut), rallongé de deux
+secondes après une pose réussie pour en poser une deuxième. La première qui
+pose **réclame** la fenêtre : les autres reçoivent « Trop tard », sans
+pénalité. Tout le monde passe → fermeture immédiate.
+
+Le moteur ne lit jamais l'horloge : `now` lui est passé. `nextDeadline(state)`
+donne la prochaine échéance, et `sockets.js` y programme **une seule**
+minuterie qui appelle `tick`. Toute mutation passe par `changed(room)` :
+diffuser, sauvegarder, reprogrammer échéance, tour automatique et réflexes des
+bots.
+
+### Lectures assumées des règles (à confirmer à la table)
+
+1. **« Même valeur »** = même rang : un roi sur un roi (rouge ou noir), mais
+   pas une Dame sur un Valet, bien qu'ils vaillent tous deux 10.
+2. **Celle qui vient de jeter ne pose pas** sur sa propre défausse (« n'importe
+   lequel des *autres* joueurs »).
+3. **Poser la carte d'une adversaire** : elle part, l'adversaire pioche **deux**
+   cartes cachées — c'est la règle donnée ; réglable à une.
+4. **La plus rapide l'emporte** s'entend par fenêtre : une fois qu'une joueuse a
+   posé, elle seule peut compléter (jusqu'à trois cartes).
+5. **Annoncer Gabo** remplace le tour ; le serveur ne vérifie pas le total à
+   l'annonce (c'est tout le bluff). L'annonceuse reste attaquable (Valet/Dame,
+   défausse rapide) pendant le dernier tour : la règle ne la protège pas.
+6. **Plus aucune carte** : la manche s'arrête sur-le-champ, Gabo automatique.
+7. **Le joker** vaut 0 (réglable à −1) et n'a pas de pouvoir — les règles
+   fournies ne le chiffraient pas.
+8. Une carte de pénalité **comble d'abord un trou** laissé par une défausse
+   rapide, sinon ouvre une nouvelle colonne ; les autres cartes ne bougent
+   jamais.
+9. La partie se joue **en manches** : chaque manche a sa gagnante, la table
+   tient le compte (victoires et points cumulés).
+
+### Une table qui ne se bloque jamais
+
+- Une **absente** (onglet fermé, téléphone verrouillé) : son tour se joue tout
+  seul au bout de dix secondes (cerveau de bot, sur ses cartes vues), et elle
+  reprend la main en revenant — même pseudo + même code, ou reprise
+  automatique depuis le `localStorage`.
+- Une **présente distraite** : bouton « ⏰ Presser » (vibration chez elle, une
+  relance toutes les dix secondes au plus), et réglage « temps par tour »
+  (∞ par défaut, 30 s / 60 s / 120 s) au-delà duquel le tour se joue seul.
+- Personne d'humain connecté : les bots s'arrêtent, la table attend.
+- Une table survit au redémarrage du serveur (`MONOPOLY_DATA_DIR/gabo/`).
+
+### Pièges rencontrés
+
+- Les mesures du client sont en `em` : la taille d'une carte se règle par la
+  seule `font-size` du conteneur, en `clamp(…vh…)` pour qu'à huit sur un
+  téléphone tout tienne en hauteur. Seule la zone des adversaires défile ; la
+  pioche et son propre jeu restent toujours visibles.
+- Un test serveur qui raccourcit `snap.until` à la main doit rappeler
+  `changed(room)`, sinon la minuterie déjà posée attend l'ancienne échéance.
+- Les chiffres en `Cormorant` (police de titre) ont des formes anciennes : un
+  « 10 » s'y lit « IO ». Les rangs se dessinent en Inter.
