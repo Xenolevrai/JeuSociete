@@ -8,6 +8,7 @@ import Lobby from './components/Lobby.jsx';
 import Table from './components/Table.jsx';
 import RoundEnd, { Scoreboard } from './components/RoundEnd.jsx';
 import Rules from './components/Rules.jsx';
+import { IconClose } from './components/Icons.jsx';
 
 export default function App() {
   const { view, receivedAt, connected, toasts, reactions, highlights, leave, restoring } = useGabo();
@@ -25,7 +26,7 @@ export default function App() {
   let screen;
   if (!view) {
     screen = restoring ? (
-      <div className="flex h-full items-center justify-center text-white/70">Retour à la table…</div>
+      <div className="flex h-full items-center justify-center font-display text-[var(--color-chalk-soft)] italic">Retour à la table…</div>
     ) : (
       <Home onRules={() => setRules(true)} connected={connected} />
     );
@@ -37,7 +38,7 @@ export default function App() {
         <Table
           view={view}
           receivedAt={receivedAt}
-          highlights={highlights}
+          marks={highlights}
           reactions={reactions}
           onRules={() => setRules(true)}
           onLeave={confirmLeave}
@@ -53,20 +54,17 @@ export default function App() {
     <div className="relative h-full">
       {screen}
       {view && !connected && (
-        <div className="fixed top-0 right-0 left-0 z-50 bg-amber-500 py-1 text-center text-sm font-semibold text-zinc-900">
+        <div className="fixed top-0 right-0 left-0 z-50 bg-[var(--color-paper)] py-1 text-center text-sm text-[var(--color-red)]">
           Connexion perdue — reconnexion en cours…
         </div>
       )}
-      <div className="pointer-events-none fixed top-14 right-0 left-0 z-50 flex flex-col items-center gap-2 px-3">
+      {/* Les messages : des bouts de papier glissés sur la table, jamais une alerte. */}
+      <div className="pointer-events-none fixed top-1 right-0 left-0 z-50 flex flex-col items-center gap-1.5 px-3">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pop-in max-w-md rounded-xl px-4 py-2 text-center text-sm font-medium shadow-lg ${
-              t.tone === 'error'
-                ? 'bg-red-600 text-white'
-                : t.tone === 'gabo'
-                  ? 'bg-[var(--color-gold)] text-zinc-900'
-                  : 'bg-zinc-900/90 text-white'
+            className={`rise paper max-w-md rounded-[3px] px-3 py-1.5 text-center text-sm shadow-[0_2px_0_rgba(0,0,0,0.3),0_6px_16px_rgba(0,0,0,0.25)] ${
+              t.tone === 'error' ? 'border-l-4 border-[var(--color-red)] text-[var(--color-red)]' : t.tone === 'gabo' ? 'font-display italic' : ''
             }`}
           >
             {t.text}
@@ -74,19 +72,19 @@ export default function App() {
         ))}
       </div>
       {panel && view && (
-        <div className="fixed inset-0 z-40 flex justify-end bg-black/50" onClick={() => setPanel(null)}>
+        <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={() => setPanel(null)}>
           <aside
-            className="scrollbar-thin h-full w-full max-w-sm overflow-y-auto bg-[var(--color-felt-deep)] p-4 shadow-2xl"
+            className="paper scroll-thin h-full w-full max-w-sm overflow-y-auto p-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-2xl font-bold text-[var(--color-gold)]">{panel === 'log' ? 'Journal' : 'Scores'}</h2>
-              <button type="button" onClick={() => setPanel(null)} className="h-10 w-10 rounded-full hover:bg-white/10" aria-label="Fermer">✕</button>
+              <h2 className="font-display text-2xl italic">{panel === 'log' ? 'Journal' : 'La soirée'}</h2>
+              <button type="button" onClick={() => setPanel(null)} className="flex h-10 w-10 items-center justify-center text-[var(--color-ink-soft)]" aria-label="Fermer"><IconClose /></button>
             </div>
             {panel === 'log' ? (
               <ol className="space-y-1.5 text-sm">
                 {[...view.log].reverse().map((e) => (
-                  <li key={e.id} className={`rounded-md px-2 py-1 ${e.type === 'gabo' || e.type === 'roundEnd' ? 'bg-[var(--color-gold)]/15 text-[var(--color-gold)]' : e.type === 'snapWrong' ? 'text-red-300' : 'text-white/85'}`}>
+                  <li key={e.id} className={`border-b border-[var(--color-ink)]/8 pb-1.5 ${e.type === 'gabo' || e.type === 'roundEnd' ? 'font-display italic' : e.type === 'snapWrong' ? 'text-[var(--color-red)]' : ''}`}>
                     {e.text}
                   </li>
                 ))}
@@ -96,13 +94,13 @@ export default function App() {
                 <Scoreboard view={view} />
                 {view.history.length > 0 && (
                   <>
-                    <h3 className="mt-5 mb-2 text-xs font-semibold tracking-wider text-white/60 uppercase">Manches</h3>
+                    <h3 className="label mt-6 mb-2 text-[var(--color-ink-soft)]">Manches</h3>
                     <ol className="space-y-1 text-sm">
                       {[...view.history].reverse().map((h) => (
-                        <li key={h.number} className="rounded bg-white/5 px-2 py-1">
-                          <span className="text-white/60">Manche {h.number} · </span>
+                        <li key={h.number} className="border-b border-[var(--color-ink)]/8 pb-1">
+                          <span className="text-[var(--color-ink-soft)]">Manche {h.number} · </span>
                           {h.winners.map((id) => view.players.find((p) => p.id === id)?.name ?? '?').join(', ')}
-                          {h.announcer && <span className="text-white/60"> {h.success ? '(Gabo réussi)' : '(Gabo raté)'}</span>}
+                          {h.announcer && <span className="text-[var(--color-ink-soft)]"> {h.success ? '· Gabo réussi' : '· Gabo raté'}</span>}
                         </li>
                       ))}
                     </ol>

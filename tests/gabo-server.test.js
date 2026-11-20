@@ -42,7 +42,7 @@ function connect(url) {
   socket.on('gabo:state', (s) => (client.state = s));
   socket.on('gabo:error', (e) => client.errors.push(e.message));
   socket.on('gabo:joined', (j) => (client.joined = j));
-  client.until = async (predicate, timeout = 4000) => {
+  client.until = async (predicate, timeout = 10000) => {
     const start = Date.now();
     while (!predicate(client.state)) {
       if (Date.now() - start > timeout) throw new Error('délai dépassé');

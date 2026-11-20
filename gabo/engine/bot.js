@@ -19,7 +19,7 @@ export const BOT_LEVELS = {
 };
 export const DEFAULT_BOT_LEVEL = 'moyen';
 
-/** Valeur moyenne d'une carte inconnue (330 points pour 54 cartes). */
+/** Valeur moyenne d'une carte inconnue : 300 points pour 52 cartes, un peu moins de six. */
 const UNKNOWN = 6;
 
 function profileOf(state, botId) {
@@ -32,7 +32,7 @@ function myCards(state, botId) {
   const round = state.round;
   const seen = new Set(round.seen[botId] ?? []);
   return round.grids[botId]
-    .map((card, slot) => (card ? { slot, known: seen.has(card.id), value: seen.has(card.id) ? cardValue(card, state.settings) : null } : null))
+    .map((card, slot) => (card ? { slot, known: seen.has(card.id), value: seen.has(card.id) ? cardValue(card) : null } : null))
     .filter(Boolean);
 }
 
@@ -44,7 +44,7 @@ function knownOpponentCards(state, botId) {
   for (const id of round.seats) {
     if (id === botId) continue;
     round.grids[id].forEach((card, slot) => {
-      if (card && seen.has(card.id)) out.push({ ownerId: id, slot, card, value: cardValue(card, state.settings) });
+      if (card && seen.has(card.id)) out.push({ ownerId: id, slot, card, value: cardValue(card) });
     });
   }
   return out;
@@ -75,7 +75,7 @@ export function botTurnAction(state, botId, rng) {
     case 'start': {
       if (shouldCallGabo(state, botId, profile, mine)) return { type: 'CALL_GABO' };
       const top = round.discard.at(-1);
-      const t = top ? cardValue(top, state.settings) : 99;
+      const t = top ? cardValue(top) : 99;
       const canDraw = round.drawPile.length > 0 || round.discard.length > 1;
       // Une très petite carte visible : on la prend, à la place de la pire connue
       // ou, à défaut, d'une inconnue (qui vaut six en moyenne).
@@ -92,7 +92,7 @@ export function botTurnAction(state, botId, rng) {
       return { type: 'CALL_GABO' };
     }
     case 'drawn': {
-      const h = cardValue(round.turn.held, state.settings);
+      const h = cardValue(round.turn.held);
       if (worst && worst.value >= h + 2 - Math.min(profile.greed, 1)) return { type: 'SWAP_HELD', slot: worst.slot };
       if (h <= 3 && unknown.length) return { type: 'SWAP_HELD', slot: pick(unknown, rng).slot };
       if (h <= 4 && unknown.length && !cardPower(round.turn.held)) return { type: 'SWAP_HELD', slot: pick(unknown, rng).slot };
@@ -121,7 +121,7 @@ function shouldCallGabo(state, botId, profile, mine) {
     for (const id of round.seats) {
       if (id === botId) continue;
       const cards = round.grids[id].filter(Boolean);
-      const guess = cards.reduce((s, c) => s + (seen.has(c.id) ? cardValue(c, state.settings) : Math.min(UNKNOWN, 4)), 0);
+      const guess = cards.reduce((s, c) => s + (seen.has(c.id) ? cardValue(c) : Math.min(UNKNOWN, 4)), 0);
       if (guess <= total) return false;
     }
   }

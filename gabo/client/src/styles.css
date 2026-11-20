@@ -1,31 +1,39 @@
 @import 'tailwindcss';
 
 /* Polices embarquées : la partie tourne sans aucune ressource externe. */
-@import '@fontsource/cormorant-garamond/600.css';
-@import '@fontsource/cormorant-garamond/700.css';
-@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/fraunces/full.css';
+@import '@fontsource-variable/fraunces/full-italic.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
 /**
- * Direction artistique « tapis de jeu » : feutre vert sombre, cartes crème,
- * filets dorés. Toutes les couleurs passent par ces variables.
+ * Direction artistique : une partie de cartes sur le tapis d'un café.
+ *
+ * Trois matières, pas une de plus — le feutre de la table, le papier des
+ * cartes et des étiquettes, l'encre. Aucun dégradé décoratif, aucune lueur :
+ * ce qui est actif se signale comme sur une vraie table, par une carte
+ * soulevée, un trait, une étiquette retournée.
  */
 @theme {
-  --color-felt: #0f5a3c;
-  --color-felt-deep: #08301f;
-  --color-felt-line: #1f7a55;
-  --color-cream: #fffaf0;
-  --color-paper: #fffdf6;
-  --color-gold: #d9ad4f;
-  --color-gold-deep: #a97c22;
-  --color-suit-red: #c0262e;
-  --color-suit-black: #18181b;
-  --color-back: #8e1b2b;
-  --color-back-deep: #5a0f1b;
-  --color-ok: #34d399;
-  --color-bad: #f87171;
+  --color-felt: #21402f;
+  --color-felt-dark: #183024;
+  --color-felt-line: #2f5541;
+  --color-paper: #f3ecdc;
+  --color-paper-2: #e7dcc4;
+  --color-card: #fbf8f1;
+  --color-ink: #1d1b17;
+  --color-ink-soft: #5b5446;
+  --color-chalk: #e9e2cf;      /* le texte écrit directement sur le feutre */
+  --color-chalk-soft: #a9b5a3;
+  --color-ochre: #d9a441;      /* une seule couleur pour « c'est à toi » */
+  --color-red: #b3322a;        /* les cœurs, les carreaux, les erreurs */
+  --color-back: #8f2a24;       /* le dos des cartes */
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 html,
@@ -36,46 +44,91 @@ body,
 
 body {
   margin: 0;
-  color: var(--color-cream);
+  color: var(--color-chalk);
   font-family: var(--font-sans);
-  background:
-    radial-gradient(ellipse at 50% 35%, #157049 0%, var(--color-felt) 35%, var(--color-felt-deep) 100%);
-  background-attachment: fixed;
+  background-color: var(--color-felt);
+  /* Le grain du feutre : un bruit fractal très léger, sans image externe. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
-}
-
-/* Le grain du feutre : deux trames de points, sans image. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.18;
-  background-image:
-    radial-gradient(rgba(0, 0, 0, 0.35) 1px, transparent 1px),
-    radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 3px 3px, 5px 5px;
-  background-position: 0 0, 1px 2px;
+  font-feature-settings: 'tnum' 1;
 }
 
 button {
   cursor: pointer;
   touch-action: manipulation;
+  font: inherit;
 }
 button:disabled {
   cursor: not-allowed;
 }
+:focus-visible {
+  outline: 2px solid var(--color-ochre);
+  outline-offset: 2px;
+}
+
+/* — Boutons : du papier et de l'encre — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0.45rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.4;
+}
+.btn-paper {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.btn-paper:hover:not(:disabled) {
+  background: #fff8e8;
+}
+.btn-line {
+  color: var(--color-chalk);
+  border: 1px solid rgba(233, 226, 207, 0.45);
+}
+.btn-line:hover:not(:disabled) {
+  border-color: var(--color-chalk);
+}
+.btn-red {
+  background: var(--color-red);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.btn-ink {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+/* Petites capitales espacées, pour les intitulés — comme sur une feuille de marque. */
+.label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
 
 /* — Cartes : la face et le dos sont deux faces d'un même objet qui pivote. — */
 .card3d {
-  perspective: 700px;
+  perspective: 600px;
 }
 .card3d-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.3, 0.7, 0.3, 1);
   transform-style: preserve-3d;
 }
 .card3d-inner.is-down {
@@ -87,84 +140,120 @@ button:disabled {
   inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  border-radius: 0.5em;
+  border-radius: 0.2em;
 }
+.card-face {
+  background: var(--color-card);
+  border: 1px solid #d6ccb6;
+}
+/* Le dos : marge blanche, champ rouge, treillis fin — un dos de jeu de café. */
 .card-back {
   transform: rotateY(180deg);
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 7px),
-    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 7px),
-    radial-gradient(circle at 50% 50%, var(--color-back) 0%, var(--color-back-deep) 100%);
-  border: 0.14em solid var(--color-paper);
-  box-shadow: inset 0 0 0 0.16em var(--color-gold-deep);
+  background: var(--color-card);
+  border: 1px solid #d6ccb6;
+  padding: 0.12em;
+}
+.card-back::before {
+  content: '';
+  position: absolute;
+  inset: 0.12em;
+  border-radius: 0.1em;
+  background-color: var(--color-back);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(251, 248, 241, 0.22) 0 1px, transparent 1px 0.28em),
+    repeating-linear-gradient(-45deg, rgba(251, 248, 241, 0.22) 0 1px, transparent 1px 0.28em);
 }
 
-@keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(217, 173, 79, 0.95); }
-  100% { box-shadow: 0 0 0 0.9em rgba(217, 173, 79, 0); }
-}
-.pulse-ring {
-  animation: pulse-ring 0.8s ease-out 2;
+/* Une carte posée sur le tapis a une ombre courte et nette. */
+.card-shadow {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.35), 0 0.12em 0.3em rgba(0, 0, 0, 0.25);
 }
 
-@keyframes pop-in {
-  0% { transform: scale(0.6) translateY(8px); opacity: 0; }
-  60% { transform: scale(1.06); opacity: 1; }
-  100% { transform: scale(1); }
+/* Ce qu'on peut toucher se soulève ; ce qu'on a choisi se marque à l'ocre. */
+.touchable {
+  transform: translateY(-0.12em);
+  outline: 1.5px dashed var(--color-chalk);
+  outline-offset: 2px;
+  box-shadow: 0 0.25em 0.4em rgba(0, 0, 0, 0.35);
 }
-.pop-in {
-  animation: pop-in 0.35s ease-out both;
+.touchable:hover {
+  transform: translateY(-0.2em);
 }
-
-@keyframes float-up {
-  0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
-  15% { transform: translate(-50%, -10px) scale(1.15); opacity: 1; }
-  100% { transform: translate(-50%, -70px) scale(1); opacity: 0; }
-}
-.float-up {
-  animation: float-up 2.2s ease-out forwards;
+.chosen {
+  transform: translateY(-0.25em);
+  box-shadow: 0 0 0 2px var(--color-ochre), 0 0.3em 0.5em rgba(0, 0, 0, 0.4);
 }
 
-@keyframes wiggle {
-  0%, 100% { transform: rotate(0); }
-  25% { transform: rotate(-4deg); }
-  75% { transform: rotate(4deg); }
+/* Ce qui vient de bouger : un trait d'ocre qui s'efface. */
+@keyframes mark-fade {
+  0%, 60% { box-shadow: 0 0 0 2px var(--color-ochre); }
+  100% { box-shadow: 0 0 0 2px transparent; }
 }
-.wiggle {
-  animation: wiggle 0.35s ease-in-out 3;
+.marked {
+  animation: mark-fade 1.8s ease-out;
+}
+@keyframes mark-bad {
+  0%, 70% { box-shadow: 0 0 0 2px var(--color-red); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
+.marked-bad {
+  animation: mark-bad 2.4s ease-out;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
+.shake {
+  animation: shake 0.4s ease-in-out 2, mark-bad 2.4s ease-out;
 }
 
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 0 2px var(--color-gold), 0 0 18px 2px rgba(217, 173, 79, 0.55); }
-  50% { box-shadow: 0 0 0 2px var(--color-gold), 0 0 6px 0 rgba(217, 173, 79, 0.2); }
+@keyframes rise {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-.my-turn-glow {
-  animation: glow 1.6s ease-in-out infinite;
+.rise {
+  animation: rise 0.25s ease-out both;
 }
 
-.selectable {
-  outline: 2px dashed rgba(255, 250, 240, 0.75);
-  outline-offset: 3px;
+@keyframes say {
+  0% { transform: translate(-50%, 4px); opacity: 0; }
+  10% { transform: translate(-50%, 0); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate(-50%, -6px); opacity: 0; }
 }
-.selectable:hover {
-  outline-color: var(--color-gold);
-  transform: translateY(-3px);
-}
-.selected {
-  outline: 3px solid var(--color-gold);
-  outline-offset: 3px;
-  transform: translateY(-5px);
+.say {
+  animation: say 2.6s ease-out forwards;
 }
 
 .safe-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-.scrollbar-thin::-webkit-scrollbar {
+.scroll-thin::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
 }
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(233, 226, 207, 0.2);
   border-radius: 3px;
+}
+
+/* Le papier : étiquettes, feuille de marque, règles. */
+.paper {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+.ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 2.4rem, rgba(29, 27, 23, 0.1) 2.4rem calc(2.4rem + 1px));
+}
+
+/* Une carte minuscule (jeu d'une adversaire sur téléphone) : pas d'enseignes
+   en poussière, un grand index à la place. */
+@container (max-width: 42px) {
+  .pips {
+    display: none;
+  }
+  .bigrank {
+    display: flex !important;
+  }
 }

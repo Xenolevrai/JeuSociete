@@ -68,7 +68,7 @@ function roundView(state, viewerId, now) {
     grids[id] = round.grids[id].map((card, slot) => {
       if (!card) return null;
       const shown = visible.get(`${id}:${slot}`);
-      if (finished) return { ...toPublic(card), value: cardValue(card, state.settings) };
+      if (finished) return { ...toPublic(card), value: cardValue(card) };
       if (shown) return { ...toPublic(card), shown: shown.reason, remainingMs: shown.remainingMs };
       if (seen.has(card.id)) return { ...toPublic(card), memo: true };
       return { down: true };
@@ -87,7 +87,7 @@ function roundView(state, viewerId, now) {
     grids,
     drawCount: round.drawPile.length,
     discardCount: round.discard.length,
-    discardTop: top ? { ...toPublic(top), value: cardValue(top, state.settings) } : null,
+    discardTop: top ? { ...toPublic(top), value: cardValue(top) } : null,
     // La carte en dessous, pour l'effet de pile — elle a été vue de toutes.
     discardUnder: round.discard.length > 1 ? toPublic(round.discard.at(-2)) : null,
     turn: turn
@@ -98,7 +98,7 @@ function roundView(state, viewerId, now) {
           // La carte piochée n'est vue que de celle qui la tient.
           // Le temps qui reste avant que le tour ne se joue tout seul (si la table l'a voulu).
           remainingMs: state.settings.turnSeconds ? Math.max(0, turn.startedAt + state.settings.turnSeconds * 1000 - now) : null,
-          held: turn.held ? (isMyTurn ? { ...toPublic(turn.held), value: cardValue(turn.held, state.settings) } : { down: true }) : null,
+          held: turn.held ? (isMyTurn ? { ...toPublic(turn.held), value: cardValue(turn.held) } : { down: true }) : null,
         }
       : null,
     snap: snap

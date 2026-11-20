@@ -110,7 +110,10 @@ export function useGabo() {
     const marks = {};
     for (const entry of fresh) {
       for (const s of entry.data?.slots ?? []) {
-        marks[`${s.ownerId}:${s.slot}`] = { kind: entry.type, until: Date.now() + HIGHLIGHT_MS };
+        // Une carte posée à tort tremble ; une pénalité arrive marquée « +1 » ;
+        // le reste (regard, échange, pose réussie) est simplement souligné.
+        const kind = s.penalty ? 'bad' : entry.type === 'snapWrong' ? 'shake' : 'ok';
+        marks[`${s.ownerId}:${s.slot}`] = { kind, until: Date.now() + HIGHLIGHT_MS + 600 };
       }
       const mine = entry.data?.playerId === view.you;
       switch (entry.type) {
@@ -123,7 +126,9 @@ export function useGabo() {
           break;
         case 'snap':
           play('snap');
-          if (!mine) toast(entry.text, 'info');
+          // On raconte toute pose qui frappe une adversaire, même la sienne :
+          // c'est le coup qu'on veut voir encaissé.
+          if (!mine || entry.data?.targetId) toast(entry.text, 'info');
           break;
         case 'snapWrong':
           play('wrong');
@@ -146,7 +151,7 @@ export function useGabo() {
       setTimeout(() => {
         const now = Date.now();
         setHighlights((prev) => Object.fromEntries(Object.entries(prev).filter(([, v]) => v.until > now)));
-      }, HIGHLIGHT_MS + 50);
+      }, HIGHLIGHT_MS + 700);
     }
   }, [view, toast]);
 

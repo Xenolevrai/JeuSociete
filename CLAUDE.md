@@ -1069,7 +1069,8 @@ la colonne de droite réarrangeable (§7 ter), 253 tests.
 
 ## 13. Le Gabo — un second jeu, un jeu de cartes (`gabo/`)
 
-Un jeu de mémoire et de réflexes à 54 cartes (variante du Tamalou / Cabo),
+Un jeu de mémoire et de réflexes à **52 cartes — sans joker, à la demande de la
+table** (variante du Tamalou / Cabo),
 de 2 à 8 joueuses, servi par **le même serveur, au même port, au même lien** :
 `http://…/gabo/`. Il ne partage aucune ligne de moteur avec le Monopoly — seul
 `server/index.js` le branche (`attachGabo`), *avant* la route « tout le reste »
@@ -1137,13 +1138,45 @@ bots.
    l'annonce (c'est tout le bluff). L'annonceuse reste attaquable (Valet/Dame,
    défausse rapide) pendant le dernier tour : la règle ne la protège pas.
 6. **Plus aucune carte** : la manche s'arrête sur-le-champ, Gabo automatique.
-7. **Le joker** vaut 0 (réglable à −1) et n'a pas de pouvoir — les règles
-   fournies ne le chiffraient pas.
+7. **Pas de joker** : on ne joue pas avec. `cardValue` rend 0 pour un rang
+   inconnu, au cas où une partie sauvegardée avant leur retrait en contiendrait.
 8. Une carte de pénalité **comble d'abord un trou** laissé par une défausse
    rapide, sinon ouvre une nouvelle colonne ; les autres cartes ne bougent
    jamais.
 9. La partie se joue **en manches** : chaque manche a sa gagnante, la table
    tient le compte (victoires et points cumulés).
+
+### La défausse rapide se joue d'un seul geste
+
+Pendant que la défausse est ouverte, **toucher une carte, c'est la poser** —
+la sienne ou celle d'une autre, sans bouton « poser » à armer avant. À la
+table, on ne demande pas la permission avant de taper la carte ; un geste en
+deux temps faisait perdre la course. Aucune autre action n'étant possible
+pendant la fenêtre, il n'y a pas de toucher ambigu. Les cartes touchables sont
+soulevées et cernées d'un pointillé ; une pose ratée tremble, une pénalité
+arrive marquée « +1 ».
+
+### Le design : une partie sur le tapis d'un café
+
+Demande explicite : **que ça ne fasse pas « généré »**. D'où quelques partis
+pris à ne pas défaire :
+
+- **trois matières seulement** — feutre (fond), papier (étiquettes, feuille de
+  marque, règles, messages), encre. Pas de dégradé décoratif, pas de lueur,
+  pas de verre dépoli, pas de rebond ;
+- **aucun emoji** : pictogrammes tracés au trait (`Icons.jsx`), et l'on se
+  parle avec des mots (« Bien joué », « Bluff… »), pas des frimousses ;
+- **de vraies cartes** (`Card.jsx`) : index en coin, disposition
+  traditionnelle des enseignes, figures encadrées et symétriques, dos en
+  treillis à marge blanche. Les enseignes sont des **tracés SVG** — un ♥ en
+  caractère s'affiche en emoji sur iPhone. Sous 42 px de large, une requête de
+  conteneur remplace les enseignes par un grand index ;
+- **une seule couleur d'alerte** : l'ocre dit « c'est à toi / c'est à elle »
+  (étiquette de place), le rouge dit l'erreur ou le Gabo ;
+- typographie : Fraunces (titres, consignes en italique, chiffres), IBM Plex
+  Sans (interface), Plex Mono (codes, minuteries) — pas d'Inter ;
+- les bots portent des **prénoms** (Margot, Lucien…) ; leur pastille de siège
+  est **creuse**, celle d'une personne pleine.
 
 ### Une table qui ne se bloque jamais
 
@@ -1165,5 +1198,6 @@ bots.
   pioche et son propre jeu restent toujours visibles.
 - Un test serveur qui raccourcit `snap.until` à la main doit rappeler
   `changed(room)`, sinon la minuterie déjà posée attend l'ancienne échéance.
-- Les chiffres en `Cormorant` (police de titre) ont des formes anciennes : un
-  « 10 » s'y lit « IO ». Les rangs se dessinent en Inter.
+- Les tailles de cartes des adversaires prennent le **plus petit** de deux
+  bornes (`min(…vh, …vw)`) : la hauteur limite sur téléphone, la largeur sur
+  tablette ; sur ordinateur c'est le plafond qui joue.

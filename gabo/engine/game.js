@@ -40,8 +40,6 @@ export const DEFAULT_SETTINGS = {
   threshold: 5,
   /** Durée de la fenêtre de défausse rapide, en secondes. */
   snapSeconds: 5,
-  /** Valeur d'un joker en fin de manche. */
-  jokerValue: 0,
   /** Aide-mémoire : les cartes déjà vues restent affichées pour soi. */
   memoryAid: false,
   /** Cartes reçues par celle dont on a posé une carte avec succès. */
@@ -55,7 +53,6 @@ export const DEFAULT_SETTINGS = {
 const ALLOWED = {
   threshold: [3, 4, 5, 6, 7, 8, 10],
   snapSeconds: [3, 4, 5, 6, 8, 10, 15],
-  jokerValue: [-1, 0],
   memoryAid: [true, false],
   opponentSnapPenalty: [1, 2],
   maxSnapCards: [1, 2, 3],
@@ -563,7 +560,7 @@ function actSnap(state, actorId, action, ctx) {
     'snap',
     mine
       ? `${name(state, actorId)} pose ${cardTheName(card)} sur la défausse !`
-      : `${name(state, actorId)} pose ${cardTheName(card)} de ${name(state, ownerId)} ! ${name(state, ownerId)} pioche ${state.settings.opponentSnapPenalty} carte(s).`,
+      : `${name(state, actorId)} pose ${cardTheName(card)} de ${name(state, ownerId)} ! ${name(state, ownerId)} pioche ${plural(state.settings.opponentSnapPenalty, 'carte')}.`,
     { playerId: actorId, targetId: mine ? null : ownerId, slots: [{ ownerId, slot }, ...penaltySlots], card: publicCard(card) },
   );
 
@@ -651,7 +648,7 @@ function endRound(state) {
   const round = state.round;
   const totals = {};
   for (const id of round.seats) {
-    totals[id] = round.grids[id].reduce((sum, card) => sum + (card ? cardValue(card, state.settings) : 0), 0);
+    totals[id] = round.grids[id].reduce((sum, card) => sum + (card ? cardValue(card) : 0), 0);
   }
   const announcer = round.gabo?.by ?? null;
   const others = round.seats.filter((id) => id !== announcer);
@@ -667,12 +664,12 @@ function endRound(state) {
     success = underLimit && lowest;
     if (success) {
       winners = [announcer];
-      reason = `${name(state, announcer)} réussit son Gabo avec ${mine} point(s).`;
+      reason = `${name(state, announcer)} réussit son Gabo avec ${plural(mine, 'point')}.`;
     } else {
       winners = others.filter((id) => totals[id] === bestOther);
-      if (!underLimit) reason = `Gabo raté : ${mine} point(s), au-dessus de la limite de ${state.settings.threshold}.`;
-      else if (mine === bestOther) reason = `Gabo raté : égalité à ${mine} point(s), l'annonceuse perd toujours.`;
-      else reason = `Gabo raté : quelqu'un a fait moins que ${mine} point(s).`;
+      if (!underLimit) reason = `Gabo raté : ${plural(mine, 'point')}, au-dessus de la limite de ${state.settings.threshold}.`;
+      else if (mine === bestOther) reason = `Gabo raté : égalité à ${plural(mine, 'point')}, et l'annonceuse perd toujours les égalités.`;
+      else reason = `Gabo raté : quelqu'un a fait moins que ${plural(mine, 'point')}.`;
     }
   } else {
     const best = Math.min(...round.seats.map((id) => totals[id]));
@@ -792,6 +789,11 @@ function remember(state, playerId, cardId, rng) {
 /** Une carte face visible, sans son identifiant interne. */
 export function publicCard(card) {
   return card ? { rank: card.rank, suit: card.suit } : null;
+}
+
+/** « 1 point », « 0 point », « 7 points » — l'usage français : pluriel à partir de deux. */
+function plural(n, word) {
+  return `${n} ${word}${Math.abs(n) >= 2 ? 's' : ''}`;
 }
 
 function name(state, id) {

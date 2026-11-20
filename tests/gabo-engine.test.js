@@ -64,17 +64,16 @@ test('valeurs des cartes : rois rouges à 0, rois noirs à 15, figures à 10', (
   assert.equal(cardValue(c('J', 'C')), 10);
   assert.equal(cardValue(c('A', 'D')), 1);
   assert.equal(cardValue(c('10', 'D')), 10);
-  assert.equal(cardValue({ rank: 'JOKER', suit: null }), 0);
-  assert.equal(cardValue({ rank: 'JOKER', suit: null }, { jokerValue: -1 }), -1);
 });
 
-test('la donne : 4 cartes chacune, une défausse, 54 cartes en tout', () => {
+test('la donne : 4 cartes chacune, une défausse, 52 cartes en tout — sans joker', () => {
   const { state } = setup(8);
   for (const id of state.round.seats) assert.equal(state.round.grids[id].length, 4);
   assert.equal(state.round.discard.length, 1);
   const ids = allCards(state).map((x) => x.id);
-  assert.equal(ids.length, 54);
-  assert.equal(new Set(ids).size, 54);
+  assert.equal(ids.length, 52);
+  assert.equal(new Set(ids).size, 52);
+  assert.ok(allCards(state).every((x) => x.rank !== 'JOKER'));
 });
 
 test('huit joueuses au plus', () => {
@@ -376,7 +375,7 @@ test('pioche vide : on remélange la défausse, sauf sa carte du dessus', () => 
   assert.equal(dispatch(state, 'p0', { type: 'DRAW' }, ctx()).ok, true);
   assert.equal(r.discard.length, 1);
   assert.equal(r.discard[0], top);
-  assert.equal(allCards(state).length, 54);
+  assert.equal(allCards(state).length, 52);
 });
 
 test("parties complètes entre bots, de 2 à 8 : jamais de coup refusé, jamais de carte perdue", () => {
@@ -393,7 +392,7 @@ test("parties complètes entre bots, de 2 à 8 : jamais de coup refusé, jamais 
       playRound(state, rng, {
         onStep: (id, action, res) => {
           if (action.type !== 'SNAP' && action.type !== 'PASS_SNAP') assert.equal(res.ok, true, res.error);
-          if (state.round && state.phase !== 'roundEnd') assert.equal(allCards(state).length, 54);
+          if (state.round && state.phase !== 'roundEnd') assert.equal(allCards(state).length, 52);
         },
       });
       assert.equal(state.phase, 'roundEnd');

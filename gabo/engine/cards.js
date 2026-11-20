@@ -12,17 +12,18 @@ export const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q
 
 export const SUIT_SYMBOL = { S: '♠', H: '♥', D: '♦', C: '♣' };
 export const RANK_LABEL = {
-  A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi', JOKER: 'Joker',
+  A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi',
 };
 
-/** Le paquet neuf, dans l'ordre : 52 cartes et deux jokers. */
+/**
+ * Le paquet neuf : 52 cartes. Les deux jokers d'une boîte de 54 restent dans
+ * la boîte — on ne joue pas avec à cette table.
+ */
 export function freshDeck() {
   const deck = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) deck.push({ id: `${rank}${suit}`, rank, suit });
   }
-  deck.push({ id: 'JK1', rank: 'JOKER', suit: null });
-  deck.push({ id: 'JK2', rank: 'JOKER', suit: null });
   return deck;
 }
 
@@ -31,7 +32,7 @@ export function freshDeck() {
  * Les rois rouges valent zéro, les rois noirs quinze : c'est tout l'enjeu
  * d'un échange à l'aveugle avec un Valet ou une Dame.
  */
-export function cardValue(card, settings = {}) {
+export function cardValue(card) {
   if (!card) return 0;
   switch (card.rank) {
     case 'A':
@@ -41,10 +42,9 @@ export function cardValue(card, settings = {}) {
       return 10;
     case 'K':
       return card.suit === 'H' || card.suit === 'D' ? 0 : 15;
-    case 'JOKER':
-      return settings.jokerValue ?? 0;
     default:
-      return Number(card.rank);
+      // `|| 0` : une partie sauvegardée avant le retrait des jokers en contient peut-être encore.
+      return Number(card.rank) || 0;
   }
 }
 
@@ -78,10 +78,9 @@ export function sameRank(a, b) {
   return Boolean(a && b && a.rank === b.rank);
 }
 
-/** Nom d'une carte pour le journal : « 7 ♥ », « Roi ♠ », « Joker ». */
+/** Nom d'une carte pour le journal : « 7 ♥ », « Roi ♠ ». */
 export function cardName(card) {
   if (!card) return '?';
-  if (card.rank === 'JOKER') return 'Joker';
   const label = RANK_LABEL[card.rank] ?? card.rank;
   return `${label} ${SUIT_SYMBOL[card.suit]}`;
 }
@@ -92,7 +91,7 @@ export function rankName(card) {
   return RANK_LABEL[card.rank] ?? card.rank;
 }
 
-/** « le 7 ♥ », « la Dame ♦ », « l'As ♠ », « le Joker ». */
+/** « le 7 ♥ », « la Dame ♦ », « l'As ♠ ». */
 export function cardTheName(card) {
   const n = cardName(card);
   if (card?.rank === 'A') return `l'${n}`;

@@ -1,38 +1,16 @@
-/** Ce que le client sait des cartes : uniquement de quoi les dessiner et les nommer. */
+/** Ce que le client sait des cartes : uniquement de quoi les nommer. */
 export const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
-export const RED = new Set(['H', 'D']);
-export const RANK_SHORT = { A: 'A', J: 'V', Q: 'D', K: 'R', JOKER: '★' };
-export const RANK_LONG = { A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi', JOKER: 'Joker' };
+export const RANK_LONG = { A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi' };
 
-export function short(rank) {
-  return RANK_SHORT[rank] ?? rank;
-}
 export function rankLabel(rank) {
   return RANK_LONG[rank] ?? rank;
 }
 export function cardLabel(card) {
   if (!card) return '';
-  if (card.rank === 'JOKER') return 'Joker';
-  return `${rankLabel(card.rank)} ${SUIT[card.suit]}`;
+  return `${rankLabel(card.rank)} ${SUIT[card.suit] ?? ''}`.trim();
 }
 
-/** Les teintes des sièges : huit couleurs bien distinctes sur fond vert. */
-export const SEAT_COLORS = ['#f59e0b', '#38bdf8', '#f472b6', '#a78bfa', '#fb7185', '#facc15', '#2dd4bf', '#fb923c'];
-export function seatColor(player) {
-  return SEAT_COLORS[(player?.avatar ?? 0) % SEAT_COLORS.length];
-}
-export function initials(name = '') {
-  const parts = name.trim().split(/\s+/);
-  return (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
-}
-
-export const POWER_TEXT = {
-  peekOwn: 'Regarde une de tes cartes',
-  peekOther: "Regarde une carte d'une adversaire",
-  swap: "Échange à l'aveugle une de tes cartes avec celle d'une adversaire",
-};
-
-/** « le 7 ♥ », « la Dame ♦ », « l'As ♠ » — pour des consignes qui se lisent bien. */
+/** « le 7 ♥ », « la Dame ♦ », « l'As ♠ ». */
 export function definite(card) {
   if (!card) return '';
   const label = cardLabel(card);
@@ -44,3 +22,20 @@ export function definite(card) {
 export function indefinite(rank) {
   return `${rank === 'Q' ? 'une' : 'un'} ${rankLabel(rank)}`;
 }
+
+/**
+ * Les couleurs de siège : des encres sourdes, distinctes entre elles et
+ * lisibles sur le papier comme sur le feutre — pas des néons.
+ */
+export const SEAT_COLORS = ['#c8873a', '#4f7fa8', '#a8483f', '#7d5a94', '#3f8f86', '#8a8a3c', '#b0607e', '#6b7b8c'];
+export function seatColor(player) {
+  return SEAT_COLORS[(player?.avatar ?? 0) % SEAT_COLORS.length];
+}
+
+export const POWER_TEXT = {
+  peekOwn: 'Regarde une de tes cartes',
+  peekOther: "Regarde une carte d'une adversaire",
+  swap: "Échange à l'aveugle une de tes cartes avec celle d'une adversaire",
+};
+
+export const BOT_LEVEL = { facile: 'bot facile', moyen: 'bot moyen', difficile: 'bot difficile' };

@@ -34,12 +34,15 @@ import { createRoom, getRoom, newPlayerId, scheduleSave } from './rooms.js';
 
 const DEFAULTS = {
   /** Temps de réflexion d'un bot, par étape de tour. */
-  botDelay: [900, 1700],
+  botDelay: [700, 1400],
   /** Délai avant que le pilote automatique ne joue pour une absente. */
   autopilotMs: 10000,
 };
 
-const REACTIONS = ['😂', '😱', '👏', '🤔', '😤', '😎', '🙈', '🔥'];
+const BOT_NAMES = ['Margot', 'Lucien', 'Odette', 'Gaston', 'Simone', 'Marcel', 'Josette', 'Raymond', 'Paulette', 'Fernand', 'Huguette', 'Armand'];
+
+/** Ce qu'on se dit à table : quelques mots, pas des emojis. */
+const REACTIONS = ['Bien joué', 'Aïe !', 'Bluff…', 'Vite !', 'Hmm…', 'Merci !', 'Oh non', 'Ha ha'];
 
 export function registerGaboHandlers(nsp, options = {}) {
   const opts = { ...DEFAULTS, ...options };
@@ -204,9 +207,12 @@ export function registerGaboHandlers(nsp, options = {}) {
       if (socket.data.playerId !== state.hostId) return fail("Seul l'hôte ajoute des bots.");
       if (state.phase === 'peek' || state.phase === 'playing') return fail('Attendez la fin de la manche.');
       const lvl = BOT_LEVELS[level] ? level : DEFAULT_BOT_LEVEL;
-      const base = BOT_LEVELS[lvl].label;
-      let botName = base;
-      for (let n = 2; state.players.some((p) => p.name.toLowerCase() === botName.toLowerCase()); n++) botName = `${base} ${n}`;
+      // Un prénom, comme autour d'une vraie table ; la pastille creuse et la
+      // liste des joueuses disent qu'il s'agit d'un bot, et de quel niveau.
+      const taken = new Set(state.players.map((p) => p.name.toLowerCase()));
+      const free = BOT_NAMES.filter((n) => !taken.has(n.toLowerCase()));
+      let botName = free.length ? free[Math.floor(Math.random() * free.length)] : BOT_LEVELS[lvl].label;
+      for (let n = 2; taken.has(botName.toLowerCase()); n++) botName = `${BOT_LEVELS[lvl].label} ${n}`;
       const res = addPlayer(state, { id: newPlayerId(), name: botName, bot: lvl, memory: BOT_LEVELS[lvl].memory });
       if (!res.ok) return fail(res.error);
       changed(room);
@@ -254,11 +260,11 @@ export function registerGaboHandlers(nsp, options = {}) {
       changed(room);
     });
 
-    socket.on('gabo:react', ({ emoji } = {}) => {
+    socket.on('gabo:react', ({ text } = {}) => {
       const room = currentRoom();
-      if (!room || !REACTIONS.includes(emoji)) return;
+      if (!room || !REACTIONS.includes(text)) return;
       // Éphémère : pas d'état, pas de sauvegarde, juste une bulle au-dessus du siège.
-      nsp.to(room.state.code).emit('gabo:reaction', { playerId: socket.data.playerId, emoji, at: Date.now() });
+      nsp.to(room.state.code).emit('gabo:reaction', { playerId: socket.data.playerId, text, at: Date.now() });
     });
 
     // « Presser » : un petit signal envoyé à celle qui tarde, comme on tapote
