@@ -1,11 +1,21 @@
-# Monopoly — la plateforme multijoueur en temps réel
+# Ludothèque — jeux de société multijoueurs en temps réel
 
-> **Nouveau : le Gabo**, jeu de cartes de mémoire et de réflexes, de 2 à 8
-> joueuses, servi par le même serveur sous `/gabo/`. Règles et architecture :
-> `CLAUDE.md` §13.
+Une étagère de jeux de société jouables depuis un navigateur, sur le même wifi
+ou à distance. L'accueil (`/`) présente toutes les boîtes ; on y rejoint aussi
+une table par son code, quel que soit le jeu.
 
-Plusieurs boîtes de Monopoly, jouables à 2-6 depuis un navigateur, sur le même
-wifi ou à distance.
+- **Monopoly** (`/monopoly`) — sept éditions, détaillées ci-dessous.
+- **Les Sept Peuples** (`/sept-peuples`) — jeu de cartes de 2 à 4 : sept
+  peuples de huit (elfes, korrigans, fées, lutins, farfadets, gnomes, dryades),
+  chacun avec son pouvoir ; les fées s'opposent aux pouvoirs adverses, et
+  peuvent elles-mêmes être contrées. Mains cachées (chaque poste ne reçoit que
+  la sienne), variantes au choix (main plafonnée, main complétée à 6, décompte
+  au plus grand peuple ou aux familles), trois niveaux de bots.
+- **Le Gabo** (`/gabo/`) — jeu de cartes de mémoire et de réflexes, de 2 à 8 :
+  quatre cartes cachées devant soi, des pouvoirs (7-8, 9-10, Valet-Dame), la
+  défausse rapide, et l'annonce du Gabo. Règles et architecture : `CLAUDE.md` §13.
+
+## Monopoly
 
 **Le jeu est complet et jouable** : plateau, règles, temps réel, lobby, échanges,
 chat, reconnexion. On peut jouer **à plusieurs sur le même ordinateur**, avec

@@ -8,8 +8,11 @@ il est construit**, **ce qui est fait**, et **ce qui reste**.
 
 ## 1. Ce qu'est ce projet
 
-Une plateforme de Monopoly multijoueur en temps réel, jouable dans un
-navigateur, pour jouer **en famille et entre amis**. Usage strictement privé :
+Une **ludothèque** de jeux de société multijoueurs en temps réel, jouable dans
+un navigateur, pour jouer **en famille et entre amis**. L'accueil (`/`) montre
+toutes les boîtes ; deux jeux y sont aujourd'hui : le **Monopoly** (`/monopoly`,
+l'essentiel de ce carnet) et **Les Sept Peuples** (`/sept-peuples`, jeu de
+cartes, voir §11 bis). Usage strictement privé :
 pas de vente, pas de diffusion publique. Les données de plateau et de cartes
 sont relevées sur les boîtes physiques du propriétaire du dépôt.
 
@@ -42,7 +45,7 @@ invariant est prouvé par `tests/locales.test.js`.
 npm install
 npm run build     # compile le client — à refaire après chaque pull
 npm start         # http://localhost:3000
-npm run check     # lint + 253 tests
+npm run check     # lint + 278 tests
 ```
 
 Node 22+, ESM partout, workspaces npm (racine + `client`).
@@ -64,7 +67,9 @@ fond via `run_in_background: true`. Un `&` en ligne se fait tuer (code 144).
 Pour un lien qui tourne 24h/24 sans dépendre d'un ordinateur personnel allumé,
 `render.yaml` à la racine décrit un service Render complet — c'est un
 Blueprint : sur render.com, « New » → « Blueprint », choisir ce dépôt et la
-branche, Render propose de créer le service tel quel.
+branche **`main`**, Render propose de créer le service tel quel. Un service
+déjà créé sur une autre branche se rebranche dans ses réglages
+(« Settings » → « Build & Deploy » → « Branch »).
 
 Deux choses que **le plan gratuit de Render n'offre pas**, et qui sont
 indispensables ici :
@@ -1007,7 +1012,7 @@ hypothèquent, enchérissent, tranchent les cartes et négocient, sur les sept
 boîtes et toutes les extensions), la **Mega Edition** (§5 quater — plateau de
 52 cases, table de huit, dé rapide, tickets de bus, gratte-ciels, dépôts,
 règle de majorité), le retour en arrière sur les gestes réversibles (§6 bis),
-la colonne de droite réarrangeable (§7 ter), 253 tests.
+la colonne de droite réarrangeable (§7 ter), la ludothèque et Les Sept Peuples (§11 bis), 278 tests.
 
 **Reste à faire**, par ordre de priorité annoncée :
 
@@ -1054,20 +1059,126 @@ la colonne de droite réarrangeable (§7 ter), 253 tests.
 
 ---
 
+## 11 bis. La ludothèque et Les Sept Peuples
+
+### Plusieurs jeux sur une seule infrastructure
+
+`server/games/index.js` est le catalogue : chaque jeu y présente la même forme
+(`createGame`, `addPlayer`, `startGame`, `dispatch`, `viewFor`, `scheduleBots`…).
+`sockets.js` et `rooms.js` ne connaissent plus aucune règle — ils demandent
+`engineOf(state)` et lui passent la main. `state.game` dit de quel jeu il
+s'agit ; une partie sauvegardée avant la ludothèque n'a pas ce champ et se lit
+comme un Monopoly (`gameIdOf`). Ajouter un jeu = une entrée dans `GAMES`, une
+fiche dans `client/src/hub/Hub.jsx`, une route dans `client/src/Root.jsx`.
+
+**L'information cachée** est la vraie nouveauté. Au Monopoly tout est public
+(`privateViews: false`, un seul envoi à la salle). Aux Sept Peuples,
+`emitState` envoie **une vue par connexion** (`viewFor(state, playerIds)`),
+taillée sur les joueuses que porte ce poste (`socket.data.session`) : sa main
+en clair, celles des autres réduites à `handCount`, la pioche à `deckCount`, et
+les entrées de journal « secrètes » remplacées par leur version publique.
+**L'état complet ne quitte jamais le serveur** — `tests/peuples-server.test.js`
+relit tout ce qui a transité par une connexion et vérifie qu'aucune carte
+adverse n'y figure. Les bots lisent eux aussi `viewFor` : ils ne trichent pas.
+
+Côté client, `Root.jsx` ouvre l'unique connexion (`useGame`) et choisit
+l'écran : l'adresse tant qu'on n'est à aucune table, `state.game` dès qu'on y
+est. `App.jsx` (Monopoly) reçoit l'objet `game` en props au lieu d'appeler
+`useGame` lui-même.
+
+### Le jeu
+
+`shared/peuples.js` (peuples, textes FR/EN des pouvoirs et variantes, décompte
+des familles), `server/games/peuples/{engine,messages,bots,index}.js`,
+`client/src/peuples/`. Les illustrations (`CardArt.jsx`) sont du SVG original
+écrit à la main ; le titre et le dessin des cartes ne reprennent pas ceux
+d'une boîte du commerce — seules les mécaniques sont communes.
+
+Les invites (`pending.kind`) : `play_card`, `elf_copy`, `choose_target`,
+`counter` (la fée), `korrigan_pick`. Hors invite, à tout moment :
+`REORDER_HAND`, `SHUFFLE_HAND`, `CHAT`.
+
+Décisions de conception, chacune pour une raison :
+
+- **La question de la fée est posée à chaque fois**, que la cible en tienne
+  une ou non, et le bouton « ne pas jouer de fée » est toujours là : être
+  interrogée seulement quand on a une fée trahirait sa main à toute la table.
+  La chaîne alterne cible/attaquante ; nombre de fées impair = pouvoir annulé.
+  Chaque fée jouée rejoint le peuple de qui la pose.
+- **Le korrigan prend à des positions, à l'aveugle** ; la victime peut mélanger
+  ou réordonner sa main jusqu'à ce qu'il choisisse (verrouillé pendant
+  `korrigan_pick`).
+- Une seule cible possible : on ne demande pas (sauf la dryade, qui choisit
+  encore sa carte).
+- **Fin de partie** : pioche vide, dès qu'une main est vide on pose
+  `finalRound.stopId` = la joueuse dont c'est le tour ; la partie s'arrête quand
+  le tour lui reviendrait (« jusqu'à celle placée à sa droite »).
+- Variantes (`settings`) : `handCap` (pas de pioche à 6 cartes ou plus, le gnome
+  ne fait pas dépasser 7), `refill` (compléter à 6 avant de jouer), `scoring`
+  `people` ou `families` (comparaison lexicographique des tailles de familles
+  triées : la plus grande, puis la suivante…).
+
+Points tranchés par le propriétaire de la boîte (ne pas les rouvrir) :
+
+- **Farfadet, décompte « plus grand peuple »** : il échange tout le peuple, lui
+  compris.
+- **Farfadet, décompte « familles »** : il échange **une famille contre une
+  famille**, choisies par l'attaquante (invite `choose_target` avec
+  `familySwap`, action `CHOOSE_TARGET { targetId, give, take }`). La famille de
+  la carte utilisée ne se cède pas : pas les farfadets avec un farfadet ; avec
+  un elfe qui copie le farfadet, les farfadets oui, les elfes non
+  (`givableRaces`). Sans famille à céder ou à prendre, le pouvoir ne fait rien.
+- **Un elfe ne copie ni fée ni elfe.**
+- **« Pas plus de 7 cartes »** : lu comme décrit ci-dessus, validé.
+- **La fée** n'annule qu'un pouvoir qui **vise** sa joueuse (korrigan, lutin,
+  farfadet, dryade, ou l'un d'eux réveillé par un elfe), et seules la cible et
+  l'attaquante se répondent. Le gnome ne vise personne et ne s'annule pas. Une
+  fenêtre de fée ouverte à toute la table a été proposée et écartée.
+
+Bots : `facile`, `moyen`, `expert` — une simulation du pouvoir sur un modèle
+public de la table. Mesure (400 duels) : expert bat facile ~65 %, moyen ~57 %.
+C'est un jeu à fort hasard ; le test exige seulement > 55 % contre le facile.
+
+### La direction artistique : des matières, pas des effets
+
+La première version avait l'air « générée » : texte en dégradé doré, halos qui
+pulsent, panneaux de verre fumé, émojis. Le Monopoly, lui, ne l'a jamais eu
+parce qu'il **imite du carton imprimé**. Les Sept Peuples et l'accueil suivent
+désormais la même règle (`styles.css`, section ludothèque) : table en noyer
+(`.peuples-bg`), papier encré à double filet (`.peuples-panel`), tapis de
+feutre surpiqué (`.peuples-felt`), plaque de titre (`.pp-plaque`), journal sur
+papier réglé (`.pp-ruled`), boutons en aplat comme des étiquettes. Les cartes
+ont un bord ivoire, un bandeau de titre en aplat et le pouvoir composé à
+l'encre sous l'illustration. **Ne pas réintroduire** de `background-clip:
+text`, de `backdrop-blur`, d'animation de halo ni d'émoji.
+
+Les couleurs passent par `--pp-ink`, `--pp-ink-soft`, `--pp-accent`,
+`--pp-rule`, `--pp-well`, que **chaque matière redéfinit** : un composant écrit
+`text-[color:var(--pp-ink)]` et se lit à l'encre sur le papier, en crème sur le
+bois ou le feutre, sans savoir où il est posé. Ne pas écrire de couleur de
+texte en dur dans ces composants.
+
+Tests : `tests/peuples.test.js`, `tests/peuples-server.test.js`.
+
+---
+
 ## 12. Conventions de contribution
 
 - Le dépôt est **en français** : code, commentaires, messages de commit,
   interface. S'y tenir.
 - Les commentaires expliquent **pourquoi**, pas quoi.
 - `npm run check` doit passer avant tout commit.
-- Développer et pousser sur la branche `claude/monopoly-multiplayer-game-1q3lo3`.
+- **`main` est la branche de référence** : tout y est réuni (Monopoly, Les Sept
+  Peuples, le Gabo), et c'est elle que Render déploie. Une session peut
+  travailler sur une branche à elle, mais le travail fini se fusionne dans
+  `main` — sinon il n'apparaît pas sur le site.
   Ne pas ouvrir de pull request sans demande explicite.
 - Ne jamais écrire de nom de modèle dans un commit, un commentaire ou un
   document du dépôt.
 
 ---
 
-## 13. Le Gabo — un second jeu, un jeu de cartes (`gabo/`)
+## 13. Le Gabo — le troisième jeu de la ludothèque (`gabo/`)
 
 Un jeu de mémoire et de réflexes à **52 cartes — sans joker, à la demande de la
 table** (variante du Tamalou / Cabo),
@@ -1075,6 +1186,14 @@ de 2 à 8 joueuses, servi par **le même serveur, au même port, au même lien**
 `http://…/gabo/`. Il ne partage aucune ligne de moteur avec le Monopoly — seul
 `server/index.js` le branche (`attachGabo`), *avant* la route « tout le reste »
 du client Monopoly, qui avalerait sinon ses adresses.
+
+Contrairement aux Sept Peuples, il **ne passe pas** par le catalogue
+`server/games/` : il a été écrit en parallèle, avec son propre registre, son
+espace de noms Socket.io (`/gabo`) et son propre client. L'accueil de la
+ludothèque (`Hub.jsx`) l'affiche sur l'étagère et y envoie par une vraie
+navigation (`href: '/gabo/'`) ; un code de **cinq** caractères y est vérifié
+auprès de `/gabo/api/table/:code` (les autres jeux en ont six). Le rapatrier
+dans `server/games/` est possible, mais rien ne l'exige.
 
 ```
 gabo/

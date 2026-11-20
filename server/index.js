@@ -15,6 +15,7 @@ import { Server } from 'socket.io';
 import { registerSocketHandlers, lobbyInfo } from './sockets.js';
 import { restoreRooms, purgeStaleRooms, getRoom, roomCount, listRooms } from './rooms.js';
 import { getEdition, DEFAULT_EDITION } from '../shared/index.js';
+import { gameIdOf } from './games/index.js';
 import { attachGabo } from '../gabo/server/index.js';
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -44,6 +45,7 @@ app.get('/api/game/:code', (req, res) => {
   if (!room) return res.status(404).json({ ok: false, error: 'Aucune partie ne porte ce code.' });
   res.json({
     ok: true,
+    game: gameIdOf(room.state),
     code: room.state.code,
     phase: room.state.phase,
     players: room.state.players.map((p) => ({ name: p.name, token: p.token, connected: p.connected })),
@@ -78,7 +80,7 @@ if (restored) console.log(`[monopoly] ${restored} partie(s) restaurée(s) depuis
 setInterval(purgeStaleRooms, 60 * 60 * 1000).unref();
 
 server.listen(PORT, HOST, () => {
-  console.log(`\n  Monopoly Paris — serveur démarré`);
+  console.log(`\n  Ludothèque — serveur démarré`);
   console.log(`  Sur cet ordinateur : http://localhost:${PORT}`);
   for (const address of localAddresses()) console.log(`  Pour les autres    : ${address}`);
   console.log(`  Le Gabo            : http://localhost:${PORT}/gabo/`);

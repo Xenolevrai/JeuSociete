@@ -106,7 +106,7 @@ export default function Home({ onRules, connected }) {
             ouvrir ma propre table
           </button>
         ) : (
-          <a href="/" className="text-[var(--color-chalk-soft)] hover:text-[var(--color-chalk)]">← Monopoly</a>
+          <a href="/" className="text-[var(--color-chalk-soft)] hover:text-[var(--color-chalk)]">← Ludothèque</a>
         )}
       </div>
     </div>

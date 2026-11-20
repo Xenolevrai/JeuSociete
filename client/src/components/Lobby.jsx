@@ -312,7 +312,7 @@ function ResumeList({ t, locale }) {
     setLoading(true);
     fetch('/api/games')
       .then((r) => r.json())
-      .then((data) => setGames(data.games ?? []))
+      .then((data) => setGames((data.games ?? []).filter((g) => (g.game ?? 'monopoly') === 'monopoly')))
       .catch(() => setGames([]))
       .finally(() => setLoading(false));
   };
@@ -478,7 +478,9 @@ function ResumeList({ t, locale }) {
 
 export function Home({ error }) {
   const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  // Un code venu de la ludothèque (« rejoindre une partie » sur l'accueil)
+  // arrive dans l'adresse : on le pré-remplit, il ne reste que le pseudo.
+  const [code, setCode] = useState(() => new URLSearchParams(window.location.search).get('code') ?? '');
   const [locale, setLocale] = useState(DEFAULT_LOCALE);
   const [editionId, setEditionId] = useState(DEFAULT_EDITION);
   const edition = getEdition(editionId, locale);
@@ -501,20 +503,13 @@ export function Home({ error }) {
     setExtensionIds((prev) => prev.filter((extId) => stillCompatible.has(extId)));
   };
 
-  const create = () => socket.emit('game:create', { name, token, editionId, faction, locale, extensionIds });
+  const create = () => socket.emit('game:create', { game: 'monopoly', name, token, editionId, faction, locale, extensionIds });
   const join = () => socket.emit('game:join', { code: code.toUpperCase(), name, token, faction });
 
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="panel w-full max-w-lg space-y-5 rounded-xl p-7">
         <Logo edition={edition} />
-        {/* L'autre jeu servi par le même serveur, au même lien. */}
-        <a
-          href="/gabo/"
-          className="block text-center font-condensed text-[12px] uppercase tracking-widest text-ink-soft underline-offset-4 hover:underline"
-        >
-          {t('playGabo')}
-        </a>
 
         <label className="block font-condensed text-[11px] uppercase tracking-widest text-ink-soft">
           {t('yourName')}

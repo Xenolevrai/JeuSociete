@@ -1,4 +1,4 @@
-# Déploiement continu sur Render.
+# Déploiement continu sur Render — toute la ludothèque (Monopoly, Les Sept Peuples, le Gabo).
 #
 # Un site 24h/24 pour la famille demande deux choses qu'un service gratuit
 # n'offre pas : un disque qui survit aux redémarrages (sinon les parties
@@ -7,14 +7,14 @@
 # Toutes les deux exigent le plan payant `starter`.
 #
 # Pour déployer : sur render.com, « New » → « Blueprint », choisir ce dépôt et
-# la branche `claude/monopoly-multiplayer-game-1q3lo3`. Render lit ce fichier
+# la branche `main`. Render lit ce fichier
 # et propose de créer le service tel quel — il ne reste qu'à confirmer.
 services:
   - type: web
     name: monopoly
     runtime: node
     plan: starter
-    branch: claude/monopoly-multiplayer-game-1q3lo3
+    branch: main
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
