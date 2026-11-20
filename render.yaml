@@ -1,4 +1,4 @@
-# Déploiement continu sur Render — toute la ludothèque (Monopoly, Les Sept Peuples, le Gabo).
+# Déploiement continu sur Render — toute la ludothèque (Monopoly, Fantasy, le Gabo).
 #
 # Un site 24h/24 pour la famille demande deux choses qu'un service gratuit
 # n'offre pas : un disque qui survit aux redémarrages (sinon les parties
@@ -7,8 +7,13 @@
 # Toutes les deux exigent le plan payant `starter`.
 #
 # Pour déployer : sur render.com, « New » → « Blueprint », choisir ce dépôt et
-# la branche `main`. Render lit ce fichier
-# et propose de créer le service tel quel — il ne reste qu'à confirmer.
+# la branche `main`. Render lit ce fichier et propose de créer le service tel
+# quel — il ne reste qu'à confirmer.
+#
+# Le service et son disque gardent leurs noms d'origine (`monopoly`,
+# `monopoly-data`) même si le dépôt s'appelle désormais JeuSociete : les
+# renommer ici ferait créer à Render un NOUVEAU service avec un disque vide,
+# et toutes les parties sauvegardées resteraient sur l'ancien.
 services:
   - type: web
     name: monopoly
@@ -23,6 +28,7 @@ services:
       mountPath: /data
       sizeGB: 1
     envVars:
+      # Dossier de sauvegarde de TOUS les jeux (le Gabo écrit dans /data/gabo).
       - key: MONOPOLY_DATA_DIR
         value: /data
       - key: NODE_VERSION

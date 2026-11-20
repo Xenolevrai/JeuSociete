@@ -1,9 +1,9 @@
 {
-  "name": "monopoly-paris",
+  "name": "jeu-societe",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Monopoly multijoueur en temps réel, et le Gabo (jeu de cartes)",
+  "description": "Ludothèque de jeux de société multijoueurs en temps réel : Monopoly, Fantasy (Les Sept Peuples) et le Gabo",
   "engines": {
     "node": ">=22"
   },

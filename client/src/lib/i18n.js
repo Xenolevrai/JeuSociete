@@ -249,7 +249,6 @@ const FR = {
   cardWaitNextTurn: 'Disponible au prochain tour',
 
   // — Extension Tout Acheter (Buy Everything) ——————————
-  rollBuyDie: 'Lancer le dé d’Achat',
   buyDieHint: 'Lancez le dé d’Achat : achetez une carte au Coffre-Fort, forcez une défausse ou renouvelez le coffre !',
   buySaleCard: 'Acheter cette carte',
   forceDiscard: 'Forcer la défausse',
@@ -495,7 +494,6 @@ const EN = {
   cardWaitNextTurn: 'Available on your next turn',
 
   // — Buy Everything Expansion ————————————————————————
-  rollBuyDie: 'Roll Buy Die',
   buyDieHint: 'Roll the Buy Die: buy a card from the Sale Vault, force a discard, or refresh the vault!',
   buySaleCard: 'Buy this card',
   forceDiscard: 'Force Discard',

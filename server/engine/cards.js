@@ -1000,7 +1000,7 @@ export function rollHeistDie(state, playerId, rng = null) {
 }
 
 /** Joue une carte Corruption depuis sa main. */
-export function playCorruptionCard(state, playerId, cardId, payload = {}, rng = null) {
+export function playCorruptionCard(state, playerId, cardId, payload = {}, _rng = null) {
   const player = playerById(state, playerId);
   if (!player) return { ok: false, error: 'Joueuse inconnue.' };
   if (!player.corruptionCards?.includes(cardId)) return { ok: false, error: 'Vous ne possédez pas cette carte Corruption.' };
@@ -1244,7 +1244,7 @@ export function playCorruptionCard(state, playerId, cardId, payload = {}, rng = 
 }
 
 /** Joue une carte Super Corruption depuis sa main. */
-export function playSuperCorruptionCard(state, playerId, cardId, payload = {}, rng = null) {
+export function playSuperCorruptionCard(state, playerId, cardId, payload = {}, _rng = null) {
   const player = playerById(state, playerId);
   if (!player) return { ok: false, error: 'Joueuse inconnue.' };
   if (!player.superCorruptionCards?.includes(cardId)) return { ok: false, error: 'Vous ne possédez pas cette carte Super Corruption.' };
@@ -1626,7 +1626,7 @@ export function refreshSaleVault(state, playerId, cardIdToReplace) {
 /**
  * Joue une carte Vente à usage unique.
  */
-export function playSaleCard(state, playerId, cardId, payload = {}, rng = null) {
+export function playSaleCard(state, playerId, cardId, payload = {}, _rng = null) {
   const player = playerById(state, playerId);
   if (!player) return { ok: false, error: 'Joueuse inconnue.' };
   if (!player.saleCards?.includes(cardId)) {

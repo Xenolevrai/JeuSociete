@@ -8,11 +8,18 @@ il est construit**, **ce qui est fait**, et **ce qui reste**.
 
 ## 1. Ce qu'est ce projet
 
-Une **ludothèque** de jeux de société multijoueurs en temps réel, jouable dans
-un navigateur, pour jouer **en famille et entre amis**. L'accueil (`/`) montre
-toutes les boîtes ; deux jeux y sont aujourd'hui : le **Monopoly** (`/monopoly`,
-l'essentiel de ce carnet) et **Les Sept Peuples** (`/sept-peuples`, jeu de
-cartes, voir §11 bis). Usage strictement privé :
+Le dépôt **JeuSociete** : une **ludothèque** de jeux de société multijoueurs
+en temps réel, jouable dans un navigateur, pour jouer **en famille et entre
+amis**. L'accueil (`/`) montre toutes les boîtes ; trois jeux y sont
+aujourd'hui :
+
+| jeu | adresse | où lire |
+|---|---|---|
+| **Monopoly** | `/monopoly` | §1 à §11 — l'essentiel de ce carnet |
+| **Fantasy** (Les Sept Peuples) | `/sept-peuples` | §11 bis |
+| **Le Gabo** | `/gabo/` | §13 |
+
+Usage strictement privé :
 pas de vente, pas de diffusion publique. Les données de plateau et de cartes
 sont relevées sur les boîtes physiques du propriétaire du dépôt.
 
@@ -43,18 +50,20 @@ invariant est prouvé par `tests/locales.test.js`.
 
 ```bash
 npm install
-npm run build     # compile le client — à refaire après chaque pull
+npm run build     # compile les deux clients — à refaire après chaque pull
 npm start         # http://localhost:3000
-npm run check     # lint + 278 tests
+npm run check     # lint (zéro avertissement) + tous les tests
 ```
 
-Node 22+, ESM partout, workspaces npm (racine + `client`).
+Node 22+, ESM partout, workspaces npm : racine, `client` (ludothèque, Monopoly,
+Fantasy) et `gabo/client`.
 
-En développement, deux processus :
+En développement, un serveur et le client qu'on retouche :
 
 ```bash
-node server/index.js            # port 3000
-cd client && npx vite --host    # port 5173, proxy /api et /socket.io vers 3000
+node server/index.js                    # port 3000, sert toute la ludothèque
+cd client && npx vite --host            # port 5173, proxy /api et /socket.io vers 3000
+cd gabo/client && npx vite --host       # port 5174, pour le Gabo
 ```
 
 **Dans un conteneur d'agent**, ces serveurs doivent être lancés en tâche de
@@ -92,26 +101,33 @@ starter` pour cette raison : ce n'est pas négociable avec un plan inférieur.
 
 ```
 shared/
+  peuples.js           données de Fantasy (§11 bis)
   editions.js          catalogue + surcouche de langue (getEdition, editionOf, listEditions)
   editions/<id>/       board.json · groups.json · cards.json · edition.json · locales/en.json
   messages.js          phrases du journal, FR + EN, une fonction par clé
   schema.js            typedefs de l'état + fabriques
 server/
-  engine/index.js      dispatch + advanceFlow — le cœur
+  index.js             un processus, un port : branche la ludothèque ET le Gabo (§13)
+  games/               le catalogue des jeux branchés sur les sockets communs (§11 bis)
+  games/peuples/       moteur, bots et journal de Fantasy
+  engine/index.js      dispatch + advanceFlow — le cœur du Monopoly
   engine/{movement,property,cards,auction,trade,money,turn,queries,log,rng}.js
   engine/speeddie.js   troisième dé, tickets de bus, déplacements différés
   rooms.js             registre des parties, codes, sauvegarde disque
-  sockets.js           passerelle Socket.io ↔ moteur
-  (index.js branche aussi le Gabo : voir §13)
+  sockets.js           passerelle Socket.io ↔ moteur du jeu de la partie
   archive.js           carnet des parties terminées, pour entraîner (voir §7 quinquies)
   bots/                les joueuses artificielles (voir §5 ter)
 scripts/               train-bots.mjs · tune-bots.mjs · stats-archives.mjs
 data/archives/         une ligne JSON par partie terminée (hors git)
 client/src/
-  components/          Board, BoardSkin, Centerpiece, SpaceArt, SpaceIcons, Actions, Players…
+  Root.jsx             l'aiguillage des routes : accueil, Monopoly, Fantasy
+  hub/Hub.jsx          l'accueil et son étagère (le Gabo y figure par un lien)
+  components/          Monopoly : Board, BoardSkin, Centerpiece, SpaceArt, Actions, Players…
+  peuples/             Fantasy
   lib/                 board.js, i18n.js, theme.js, rulesText.jsx, useGame.js, useCinematic.js
-tests/                 archive · bots · contrast · data · editions · engine · locales · mega-edition · payment-flow · points-edition · server · simulation
-docs/                  DATA_MODEL · MOTEUR · SERVEUR · CLIENT · ART_DIRECTION
+gabo/                  le Gabo, autonome : engine/ · server/ · client/ (§13)
+tests/                 un fichier par sujet ; peuples-* et gabo-* pour les jeux de cartes
+docs/                  docs/README.md (sommaire) · docs/monopoly/ (moteur, données, serveur, client, DA)
 ```
 
 ### Les trois règles à ne pas casser
@@ -1000,7 +1016,7 @@ Le basculement se fait par classes Tailwind dans `client/src/App.jsx`
 
 ## 11. Où en est le projet
 
-**Fait et vérifié** : les quatre éditions, les deux langues, l'écran de règles,
+**Fait et vérifié** : les sept éditions du Monopoly, les deux langues, l'écran de règles,
 la reprise d'une partie un autre jour depuis n'importe quel appareil (même si
 personne n'est connecté), le paiement négociable, les enchères, le chat, la
 mise en page téléphone et ordinateur, les **trois** extensions Hasbro sur
@@ -1012,7 +1028,8 @@ hypothèquent, enchérissent, tranchent les cartes et négocient, sur les sept
 boîtes et toutes les extensions), la **Mega Edition** (§5 quater — plateau de
 52 cases, table de huit, dé rapide, tickets de bus, gratte-ciels, dépôts,
 règle de majorité), le retour en arrière sur les gestes réversibles (§6 bis),
-la colonne de droite réarrangeable (§7 ter), la ludothèque et Les Sept Peuples (§11 bis), 278 tests.
+la colonne de droite réarrangeable (§7 ter), la ludothèque et Les Sept Peuples
+(§11 bis), le Gabo (§13).
 
 **Reste à faire**, par ordre de priorité annoncée :
 

@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { socket } from '../lib/socket.js';
-import SeatDot from './Avatar.jsx';
+import SeatDot from './SeatDot.jsx';
 import { IconLink, IconClose, IconRules, IconLeave } from './Icons.jsx';
 import { BOT_LEVEL } from '../lib/cards.js';
 

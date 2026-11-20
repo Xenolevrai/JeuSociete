@@ -1,258 +1,118 @@
-# Ludothèque — jeux de société multijoueurs en temps réel
+# JeuSociete — une ludothèque à jouer ensemble
 
-Une étagère de jeux de société jouables depuis un navigateur, sur le même wifi
-ou à distance. L'accueil (`/`) présente toutes les boîtes ; on y rejoint aussi
-une table par son code, quel que soit le jeu.
+Des jeux de société jouables depuis un navigateur, autour d'un même écran ou
+chacun chez soi. Un seul serveur, une seule adresse : l'accueil présente les
+boîtes, on dresse une table, on envoie le code — et l'on joue.
 
-- **Monopoly** (`/monopoly`) — sept éditions, détaillées ci-dessous.
-- **Les Sept Peuples** (`/sept-peuples`) — jeu de cartes de 2 à 4 : sept
-  peuples de huit (elfes, korrigans, fées, lutins, farfadets, gnomes, dryades),
-  chacun avec son pouvoir ; les fées s'opposent aux pouvoirs adverses, et
-  peuvent elles-mêmes être contrées. Mains cachées (chaque poste ne reçoit que
-  la sienne), variantes au choix (main plafonnée, main complétée à 6, décompte
-  au plus grand peuple ou aux familles), trois niveaux de bots.
-- **Le Gabo** (`/gabo/`) — jeu de cartes de mémoire et de réflexes, de 2 à 8 :
-  quatre cartes cachées devant soi, des pouvoirs (7-8, 9-10, Valet-Dame), la
-  défausse rapide, et l'annonce du Gabo. Règles et architecture : `CLAUDE.md` §13.
-
-## Monopoly
-
-**Le jeu est complet et jouable** : plateau, règles, temps réel, lobby, échanges,
-chat, reconnexion. On peut jouer **à plusieurs sur le même ordinateur**, avec
-d'autres joueuses **à distance** dans la même partie. Les trois extensions Hasbro
-2025 sont activables à la création de la partie (Parc Gratuit Jackpot, Prison,
-Tout Acheter), et **quatre niveaux de bots**. 207 tests automatisés.
-
-## Les éditions
-
-Chacune a son plateau, ses pions, ses cartes, ses couleurs et sa matière — et,
-quand la boîte le demande, **ses règles**.
-
-| Édition | Monnaie | Plateau | Règles |
+| jeu | adresse | joueurs | en deux mots |
 |---|---|---|---|
-| **Monopoly Classique** | € | carton vert de table | la référence — vingt pions au choix |
-| **Harry Potter — Gallions** | G | parchemin, Carte du Maraudeur | comme le classique, noms de Poudlard |
-| **Marvel Avengers** | M$ | acier et néons | bases S.H.I.E.L.D. et quartiers généraux Stark |
-| **Spider-Man — Collector** | $ | nuit d'encre, toile tendue, pans rouge et bleu | comme le classique : on capture les vilains, on pose traceurs et tours de toile |
-| **Spider-Man — Bouffon Vert** | $ | nuit d'encre, toile tendue, pans rouge et bleu | **règles Hasbro** : chaque joueuse a un héros et son pouvoir, un pion hostile avance tout seul et sème des bombes, des raccourcis de toile traversent le plateau |
-| **Harry Potter — Coupe des Quatre Maisons** | points | ciel de nuit, Grande Salle | **règles Hasbro** : pas d'hôtel, pas d'hypothèque, personne n'est éliminée, on gagne en explorant tout le plateau |
+| **Monopoly** | `/monopoly` | 2 – 8 | sept éditions, trois extensions Hasbro, quatre niveaux de bots |
+| **Fantasy** (Les Sept Peuples) | `/sept-peuples` | 2 – 4 | jeu de cartes de petit peuple : pouvoirs, contres, familles |
+| **Le Gabo** | `/gabo/` | 2 – 8 | jeu de cartes de mémoire et de réflexes, le plus petit total l'emporte |
 
-Au moment de créer une partie, on choisit sa boîte **et sa langue** : français ou
-anglais. La langue ne change que les mots — jamais un prix, jamais une règle.
+Usage strictement privé, en famille et entre amis.
 
-Sur l'édition Classique, trois **extensions Hasbro** sont activables à la
-création de la partie :
-
-- **Parc Gratuit Jackpot** — Chance et Caisse de communauté deviennent des cases
-  Spin, la cagnotte du Parc Gratuit devient permanente.
-- **Prison** — les cases taxes envoient en prison, une geôle plus sévère
-  apparaît, trois doubles n'y mènent plus.
-- **Tout Acheter** — Départ, Prison et Parc Gratuit deviennent achetables, un
-  coffre de cartes Vente reste retourné au centre, un dé d'Achat facultatif
-  permet d'en gagner, et toute case dépassée sans s'y arrêter part aux enchères.
-
-Certaines se marchent sur les mêmes cases et ne peuvent donc pas s'activer
-ensemble — l'écran de sélection le détecte tout seul et grise ce qui ne va pas
-avec ce qui est déjà coché. Prison + Tout Acheter est la combinaison à deux
-autorisée.
-
-![Une partie en cours](docs/captures/partie.png)
-
-## Démarrage
+## Lancer
 
 ```bash
 npm install
-npm run build   # compile l'interface — à refaire après chaque `git pull`
+npm run build   # compile les interfaces — à refaire après chaque `git pull`
 npm start       # http://localhost:3000 — l'adresse à partager s'affiche au démarrage
-npm run check   # lint + 207 tests : données, éditions, extensions, bots, langues, règles, parties simulées, temps réel
+npm run check   # lint + tous les tests
 ```
 
-Node 22+. Le serveur affiche aussi l'adresse locale (`http://192.168.x.x:3000`) à
-donner aux autres joueuses du même wifi.
+Node 22 ou plus. Au démarrage, le serveur affiche aussi l'adresse locale
+(`http://192.168.x.x:3000`) à donner aux autres sur le même wifi.
 
-## Structure
+## Jouer ensemble, en permanence
+
+Pour un lien qui tourne 24 h/24 sans dépendre d'un ordinateur allumé, le dépôt
+contient un `render.yaml` prêt pour [Render](https://render.com) : « New » →
+« Blueprint », ce dépôt, branche **`main`**. Il faut le plan **Starter** : le
+plan gratuit met le service en veille et efface les parties sauvegardées à
+chaque redémarrage (détails : `CLAUDE.md` §2 bis).
+
+Chaque partie est sauvegardée à chaque coup. Fermer un onglet, verrouiller son
+téléphone, redémarrer le serveur : on retrouve sa place en revenant.
+
+## Les jeux
+
+### Monopoly
+
+Plateau, règles, temps réel, échanges, chat, reconnexion, jeu **sur le même
+ordinateur** et **à distance** dans la même partie, en **français ou en
+anglais**.
+
+| édition | monnaie | particularité |
+|---|---|---|
+| **Classique** | € | la référence — vingt pions au choix |
+| **Harry Potter — Gallions** | G | règles classiques, noms de Poudlard |
+| **Marvel Avengers** | M$ | bases S.H.I.E.L.D. et quartiers généraux Stark |
+| **Spider-Man — Collector** | $ | reskin exact du classique |
+| **Spider-Man — Bouffon Vert** | $ | règles Hasbro : héros à pouvoirs, pion hostile, raccourcis de toile |
+| **Harry Potter — Coupe des Quatre Maisons** | points | pas d'hôtel ni d'hypothèque, on gagne en explorant le plateau |
+| **Mega Edition** | € | 52 cases, jusqu'à 8, troisième dé, tickets de bus, gratte-ciels |
+
+Sur le classique, trois **extensions Hasbro** s'activent à la création de la
+partie : **Parc Gratuit Jackpot**, **Prison**, **Tout Acheter** (l'écran grise
+celles qui se marchent dessus).
+
+Ce qui en fait une partie de famille plutôt qu'un jeu vidéo :
+
+- **un loyer n'est jamais prélevé d'office** — on paie, on hypothèque, on
+  négocie avec n'importe qui, ou l'on propose un arrangement à la
+  propriétaire ; un bouton **Annuler** revient sur un geste réversible ;
+- **aucune commande réservée** : on se met d'accord à l'oral, la première qui a
+  la souris clique ;
+- **quatre niveaux de bots** (facile, moyen, difficile, expert) qui achètent,
+  bâtissent, enchérissent et négocient — sans jamais pouvoir tricher ;
+- sur téléphone, le plateau et les boutons tiennent dans le même onglet ; sur
+  ordinateur, les panneaux se rangent à gauche ou à droite du plateau.
+
+![Une partie en cours](docs/monopoly/captures/partie.png)
+
+### Fantasy — Les Sept Peuples
+
+Sept peuples de huit cartes (elfes, korrigans, fées, lutins, farfadets, gnomes,
+dryades), chacun avec son pouvoir ; les fées s'opposent aux pouvoirs adverses
+et peuvent elles-mêmes être contrées. Mains cachées, variantes au choix, trois
+niveaux de bots.
+
+### Le Gabo
+
+Quatre cartes face cachée devant soi, dont on n'a vu que deux. À son tour, on
+pioche ou l'on prend la défausse pour remplacer une carte, ou l'on jette la
+carte piochée pour son pouvoir (7-8 : regarder sa carte, 9-10 : celle d'une
+autre, Valet-Dame : échanger à l'aveugle). Dès qu'une carte est jetée, chacun
+peut **poser dessus une carte de même valeur** — la sienne, ou celle d'une
+adversaire pour la pénaliser — d'un double toucher, de mémoire. Quand on se
+croit à 5 points ou moins, on annonce « Gabo ».
+
+52 cartes sans joker, de 2 à 8, bots à mémoire faillible, et une table qui ne
+se bloque jamais (une absente joue en automatique, un bouton pour presser
+l'étourdie).
+
+## Organisation du dépôt
 
 ```
-shared/          données de jeu + schéma d'état, partagés serveur ↔ client
-  editions.js    catalogue des boîtes + surcouche de langue
-  editions/<id>/ board.json, groups.json, cards.json, edition.json, locales/en.json
-  messages.js    les phrases du journal, en français et en anglais
-  schema.js      typedefs de l'état + fabriques d'état initial
-server/
-  engine/        moteur : tour, déplacements, loyers, cartes, enchères, faillite
-  index.js       serveur HTTP + API, sert le client compilé
-  sockets.js     passerelle Socket.io ↔ moteur
-  rooms.js       registre des parties, codes, sauvegarde sur disque
-  bots/          les quatre niveaux de joueuses artificielles
-scripts/         train-bots.mjs, tune-bots.mjs — tournois et entraînement
-client/          interface React + Vite + Tailwind
-  src/components/  plateau et son décor, joueuses, actions, échanges, journal, chat
-  src/lib/         connexion temps réel, état, données du plateau, thème, langues
-tests/           bots / data / editions / engine / locales / payment-flow / points-edition / server / simulation
-docs/            DATA_MODEL.md, MOTEUR.md, SERVEUR.md, CLIENT.md, ART_DIRECTION.md
-CLAUDE.md        carnet de bord : architecture, pièges, ce qui reste à faire
+client/            l'interface de la ludothèque (React + Vite + Tailwind)
+  src/Root.jsx     l'aiguillage : accueil, Monopoly ou Fantasy
+  src/hub/         l'accueil et son étagère
+  src/components/  Monopoly : plateau, actions, échanges, journal…
+  src/peuples/     Fantasy
+server/            le serveur (Node + Express + Socket.io)
+  index.js         un seul processus, un seul port, pour toute la ludothèque
+  games/           le catalogue des jeux branchés sur les sockets communs
+  engine/          moteur du Monopoly ;  bots/  ses joueuses artificielles
+shared/            données du Monopoly (éditions, cartes) et de Fantasy
+gabo/              le Gabo, autonome : engine/ · server/ · client/
+tests/             un fichier par jeu et par sujet
+scripts/           tournois et réglage des bots du Monopoly
+docs/              documentation détaillée (voir docs/README.md)
+CLAUDE.md          le carnet de bord : architecture, décisions, pièges, suite
 ```
 
-**Ajouter une édition = déposer un dossier** dans `shared/editions/`, le déclarer
-dans `shared/editions.js`, dessiner les pions manquants. Aucune ligne de moteur
-ne bouge — et `tests/editions.test.js` joue une partie entière sur la nouvelle
-boîte pour le vérifier.
-
-## Stack retenue
-
-React + Vite + Tailwind côté client, Node + Express + Socket.io côté serveur,
-état en mémoire côté serveur. C'est bien la stack proposée dans le cahier des
-charges, avec deux ajustements pensés pour un groupe non technique :
-
-- **un seul processus, un seul port** : Express sert le build du client *et* le
-  websocket. Une seule commande à lancer (`npm start`), une seule URL à partager,
-  pas de CORS à régler ;
-- **snapshot JSON sur disque** plutôt que SQLite : l'état est déjà 100 %
-  sérialisable, donc une sauvegarde toutes les N mutations dans un fichier suffit
-  à survivre à un redémarrage. On passera à SQLite seulement si on veut plusieurs
-  parties archivées.
-
-## Direction artistique
-
-**Chaque boîte a son plateau.** Le carton vert de table pour le classique, un
-parchemin à l'encre sépia pour Harry Potter, un ciel de nuit doré pour la Coupe
-des Quatre Maisons, de l'acier et des néons pour les Avengers : matière, cadre,
-filigrane, blason central et illustration de chaque case changent avec
-l'édition. Tout est dessiné en SVG à la main — rien à télécharger, le jeu tourne
-hors ligne. Détails dans `docs/ART_DIRECTION.md`.
-
-## Jouer ensemble
-
-1. Une personne lance `npm start` sur son ordinateur et ouvre `http://localhost:3000`.
-2. Elle crée une partie, choisit son pion, et **ajoute autant de joueuses qu'elle
-   veut sur ce même ordinateur** (bouton « + Ajouter une joueuse sur cet
-   ordinateur »). On se passe simplement la souris : le jeu annonce à chaque tour
-   à qui c'est.
-3. Pour les joueuses à distance, elle partage l'adresse affichée au démarrage
-   (`http://192.168.x.x:3000`) si tout le monde est sur le même wifi, ou un tunnel
-   (ngrok, Cloudflare Tunnel) sur le port 3000 sinon, et dicte le code à six
-   lettres.
-4. Quand tout le monde est là, **n'importe qui** lance la partie.
-
-Les deux modes se mélangent : trois personnes autour d'un portable et deux autres
-à distance, dans la même partie.
-
-**Ou, pour un lien qui tourne en permanence** sans dépendre d'un ordinateur
-personnel allumé : le dépôt contient un `render.yaml` prêt à l'emploi pour
-[Render](https://render.com). Sur render.com, « New » → « Blueprint », choisir
-ce dépôt — Render configure tout seul le service, le disque de sauvegarde et
-les variables d'environnement. Il faut le plan payant **Starter** (le plan
-gratuit met le service en veille et efface les sauvegardes à chaque
-redémarrage) — détails dans `CLAUDE.md` (§2 bis).
-
-Fermer un onglet par erreur ne fait rien perdre : rouvrir la page reprend la
-partie au même point.
-
-**On peut s'arrêter et reprendre un autre jour.** La partie est sauvegardée à
-chaque coup et survit à l'extinction du PC. L'écran d'accueil liste les parties en
-cours avec leurs pions et le tour atteint : on tape son pseudo, on clique dessus,
-et on repart où l'on s'était arrêtées. Rien n'est effacé avant un mois sans jouer.
-
-Et si l'envie de finir n'y est plus, **n'importe qui** peut terminer la partie
-depuis la barre du haut. Le **compte final** s'ouvre alors au milieu de l'écran,
-chez tout le monde en même temps : le podium, le détail de chacune (liquide,
-propriétés, constructions), les éliminées en bas de tableau. De là, un bouton
-ramène à l'accueil pour en relancer une — ou on referme pour regarder le plateau
-une dernière fois, le compte reste accessible depuis la barre du haut.
-
-## Jouer contre des bots
-
-On peut ajouter autant de joueuses artificielles qu'on veut au salon, à quatre
-niveaux : **facile**, **moyen**, **difficile**, **expert**. Elles portent le nom
-de leur niveau et un badge « bot », pour qu'on sache toujours qui est une
-machine. Pratique pour jouer à deux contre la maison, ou pour compléter une
-table quand il manque du monde.
-
-Elles jouent **vraiment** : elles achètent, enchérissent, bâtissent,
-hypothèquent pour se refaire, tranchent les cartes à choix, et **négocient** —
-elles repèrent le terrain qui leur ferme un groupe, cherchent quoi offrir en
-échange, et acceptent ou refusent selon ce que le marché leur rapporte.
-
-La différence entre les niveaux n'est pas cosmétique. Un bot faible juge mal et
-se trompe franchement de temps en temps, comme une débutante ; un expert
-connaît les probabilités du plateau — il sait que l'orange rapporte plus que la
-rue de la Paix parce qu'on y tombe plus souvent en sortant de prison — et ne
-laisse rien passer. Sur 100 parties à quatre, l'expert en gagne 54 et le facile
-aucune.
-
-Elles ne peuvent pas tricher : leurs coups passent exactement par la même porte
-que les vôtres, et le serveur leur refuserait une action illégale comme à
-n'importe qui.
-
-## Sur téléphone comme sur ordinateur
-
-**Sur ordinateur**, on choisit soi-même la disposition : vos biens, les
-joueuses, le journal et le chat se replient, se réordonnent, et se glissent à
-gauche ou à droite du plateau — chacune joue autrement, chacune met devant ce
-qu'elle regarde. L'agencement choisi est gardé d'une partie à l'autre.
-
-**Sur téléphone**, trois onglets, et le premier suffit pour jouer : l'onglet
-**Jeu** montre le plateau *et* les boutons — on lance les dés, on voit la case
-où l'on tombe, on achète, on paie, sans jamais changer d'écran. L'onglet
-**Profil** sert à regarder ses biens à tête reposée, l'onglet **Journal** à
-relire ce qui s'est passé.
-
-## Conçu pour se jouer en se parlant
-
-On joue en vocal, ou dans la même pièce. Le jeu n'essaie donc pas de remplacer la
-conversation ni de départager qui a le droit de faire quoi :
-
-- **aucune commande réservée à une seule personne** — lancer la partie, changer
-  les règles maison, arrêter la partie : la première qui a la souris clique, une
-  fois que le groupe s'est mis d'accord à l'oral ;
-- **le journal note qui a fait quoi**, ce qui suffit largement entre amies ;
-- **les négociations se règlent de vive voix**, l'écran ne sert qu'à exécuter
-  l'accord : on saisit l'échange, l'autre accepte d'un clic, à tout moment ;
-- le **chat** reste là pour noter un montant ou un accord, sans être le canal
-  principal.
-
-Le seul verrou conservé est celui qui protège le jeu lui-même : on ne peut pas
-lancer les dés à la place d'une autre, ni acheter pendant son tour.
-
-## Le rythme d'une vraie partie
-
-- Les dés roulent d'abord, **le pion ne part qu'ensuite**, case par case.
-- Les deux tas de cartes sont posés au centre : quand on tombe sur Chance ou
-  Caisse de Communauté, **on pioche soi-même**, on lit la carte retournée en
-  grand, puis on l'applique.
-- L'argent s'affiche **en billets**, et on compose ses paiements en posant les
-  coupures qu'on veut donner.
-
-## Négocier plutôt que payer
-
-**Un loyer n'est jamais prélevé d'office.** Quand on tombe chez quelqu'un, la
-somme devient une dette, et on choisit :
-
-- payer comptant — les billets à sortir sont affichés ;
-- hypothéquer ou revendre ses constructions ;
-- **négocier avec n'importe qui** pour réunir des fonds, puis payer ;
-- et si l'on s'est trompée — une maison revendue trop vite, une hypothèque de
-  trop — un bouton **Annuler** revient sur le geste. Seulement sur les gestes
-  qui ne révèlent rien : jamais sur un jet de dés ni sur une carte piochée ;
-- **proposer un arrangement à la propriétaire** : un terrain, deux terrains, un
-  peu d'argent, un mélange des deux. Si elle accepte, **la dette est effacée**,
-  quel que soit le montant cédé. C'est aux deux de juger si le marché est bon ;
-- déclarer faillite, en dernier recours.
-
-Une proposition se répond **à tout moment**, sans attendre son tour. Sur un écran
-partagé, les offres adressées à n'importe quelle joueuse du poste sont visibles
-et répondables tout de suite.
-
-## Pistes si l'envie vient
-
-- Relire les trois extensions contre les boîtes physiques : les règles de
-  Prison et de Tout Acheter viennent de sources secondaires, pas des livrets
-  officiels (voir CLAUDE.md §5)
-- Relire l'édition **Bouffon Vert** contre la boîte physique : deux de ses
-  règles sont des lectures assumées, et les chiffres que la boîte ne donne pas
-  (pénalité d'une bombe, prix d'un raccourci) ont été calibrés à la simulation
-  — voir CLAUDE.md §5 bis
-- Junior, Cheaters, Empire, Speed — les drapeaux de mécaniques correspondants
-  existent déjà dans `edition.mechanics`
-- Sauvegarde longue durée en SQLite plutôt qu'en fichiers JSON
-- Statistiques de fin de partie (patrimoine, loyers encaissés)
+Le principe commun aux trois jeux : **le serveur fait foi**. Le navigateur
+n'applique aucune règle ; il affiche ce qu'on a le droit de voir et envoie des
+intentions. Dans les jeux à cartes cachées, chaque poste ne reçoit que sa
+propre vue — un navigateur modifié n'apprendrait rien de plus.

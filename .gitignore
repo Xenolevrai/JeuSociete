@@ -1,11 +1,16 @@
+# Dépendances et compilations
 node_modules/
 dist/
+
+# Parties sauvegardées (une par fichier) : propres à chaque serveur
+server/data/
+gabo/server/data/
+
+# Parties archivées : ~500 Ko chacune, et ce sont nos parties de famille
+data/archives/*.jsonl
+
+# Réglages locaux d'éditeur et d'outils
+.claude/
 .DS_Store
 *.log
-server/data/
-.claude/
 *.exe
-# Les parties archivées : ~500 Ko chacune, et ce sont nos parties de famille.
-data/archives/*.jsonl
-gabo/client/dist/
-gabo/server/data/

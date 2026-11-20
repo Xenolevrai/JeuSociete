@@ -1,5 +1,11 @@
 # Le serveur temps réel
 
+> **À lire avec `CLAUDE.md`.** Ce document date du Monopoly seul. Depuis, le
+> serveur héberge une ludothèque : `server/sockets.js` ne parle plus
+> directement au moteur du Monopoly mais au catalogue `server/games/`
+> (CLAUDE.md §11 bis), et le Gabo a son propre serveur (`gabo/server/`, §13).
+> Les règles du Monopoly décrites ici, elles, restent justes.
+
 Un seul processus, un seul port : Express sert le client compilé et Socket.io
 partage le même serveur HTTP. Une commande à lancer, une URL à partager.
 

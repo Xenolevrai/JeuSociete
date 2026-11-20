@@ -125,7 +125,6 @@ function Side({ title, player, state, value, onChange }) {
     onChange({ ...value, spaceIds: next });
   };
 
-  const totalCards = allOwned.length;
   const tradableCards = allOwned.filter((i) => !i.prop.hotel && i.prop.houses === 0).length;
 
   return (

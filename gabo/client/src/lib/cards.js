@@ -1,8 +1,8 @@
 /** Ce que le client sait des cartes : uniquement de quoi les nommer. */
-export const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
-export const RANK_LONG = { A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi' };
+const SUIT = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const RANK_LONG = { A: 'As', J: 'Valet', Q: 'Dame', K: 'Roi' };
 
-export function rankLabel(rank) {
+function rankLabel(rank) {
   return RANK_LONG[rank] ?? rank;
 }
 export function cardLabel(card) {
@@ -27,7 +27,7 @@ export function indefinite(rank) {
  * Les couleurs de siège : des encres sourdes, distinctes entre elles et
  * lisibles sur le papier comme sur le feutre — pas des néons.
  */
-export const SEAT_COLORS = ['#c8873a', '#4f7fa8', '#a8483f', '#7d5a94', '#3f8f86', '#8a8a3c', '#b0607e', '#6b7b8c'];
+const SEAT_COLORS = ['#c8873a', '#4f7fa8', '#a8483f', '#7d5a94', '#3f8f86', '#8a8a3c', '#b0607e', '#6b7b8c'];
 export function seatColor(player) {
   return SEAT_COLORS[(player?.avatar ?? 0) % SEAT_COLORS.length];
 }

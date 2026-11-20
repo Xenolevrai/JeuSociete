@@ -649,69 +649,6 @@ function HeistDieComponent({ state, actor }) {
   );
 }
 
-function BuyDieComponent({ state, actor }) {
-  const t = useT(state);
-  const [rolling, setRolling] = useState(false);
-  const isEn = state.locale === 'en';
-
-  const lastRoll = state.buyDie;
-  const face = lastRoll?.face;
-
-  const handleRoll = () => {
-    if (rolling) return;
-    setRolling(true);
-    sendAction({ type: 'ROLL_BUY_DIE' }, actor);
-    setTimeout(() => {
-      setRolling(false);
-    }, 1200);
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border-2 border-emerald-600/50 bg-gradient-to-b from-emerald-50 via-green-100/60 to-emerald-50 p-4 shadow-lg">
-      <div className="flex items-center gap-2">
-        <span className="text-xl">🗄️</span>
-        <span className="font-condensed text-sm font-bold uppercase tracking-wider text-emerald-950">
-          {t('buyDie')}
-        </span>
-        <span className="text-xl">🎲</span>
-      </div>
-
-      <p className="text-center text-xs text-emerald-900/80">
-        {t('buyDieHint')}
-      </p>
-
-      <div className={`relative flex h-24 w-24 items-center justify-center rounded-2xl border-2 shadow-inner transition-transform duration-500 ${
-        face?.type === 'buy_card' ? 'border-emerald-700 bg-emerald-600 text-white' :
-        face?.type === 'force_discard' ? 'border-red-700 bg-red-600 text-white' :
-        face?.type === 'refresh_vault' ? 'border-amber-600 bg-amber-500 text-white' :
-        'border-emerald-600 bg-emerald-500 text-white'
-      } ${rolling ? 'animate-spin' : ''}`}>
-        {face ? (
-          <div className="flex flex-col items-center justify-center text-center p-1">
-            <span className="text-2xl">
-              {face.type === 'buy_card' ? '🟢 ⬆️' : face.type === 'force_discard' ? '🔴 ❌' : '🟡 🔄'}
-            </span>
-            <span className="font-condensed text-sm font-black uppercase tracking-wider mt-0.5 leading-tight">
-              {isEn ? face.labelEn : face.labelFr}
-            </span>
-          </div>
-        ) : (
-          <span className="text-3xl">🎲</span>
-        )}
-      </div>
-
-      <Button
-        tone="primary"
-        className="!w-full !py-2.5 font-bold uppercase tracking-wider !bg-emerald-600 hover:!bg-emerald-700 !text-white shadow-md"
-        disabled={rolling}
-        onClick={handleRoll}
-      >
-        {t('rollBuyDie')}
-      </Button>
-    </div>
-  );
-}
-
 function BuySaleCardModal({ state, me, payload, actor }) {
   const t = useT(state);
   const cards = cardIndexOf(state);

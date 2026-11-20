@@ -17,7 +17,7 @@ import { definite, indefinite, POWER_TEXT } from '../lib/cards.js';
 import { isMuted, setMuted } from '../lib/sound.js';
 import Card from './Card.jsx';
 import Grid from './Grid.jsx';
-import SeatDot from './Avatar.jsx';
+import SeatDot from './SeatDot.jsx';
 import { IconScore, IconLog, IconRules, IconSound, IconMute, IconLeave, IconTalk, IconHurry } from './Icons.jsx';
 
 const PHRASES = ['Bien joué', 'Aïe !', 'Bluff…', 'Vite !', 'Hmm…', 'Merci !', 'Oh non', 'Ha ha'];

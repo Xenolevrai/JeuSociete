@@ -3,7 +3,7 @@
  *
  * Principes retenus :
  *  1. Le serveur détient LA vérité : ce `GameState` vit côté serveur, le client
- *     n'en reçoit qu'une projection (voir `docs/DATA_MODEL.md`, section « vues »).
+ *     n'en reçoit qu'une projection (voir `docs/monopoly/DATA_MODEL.md`, section « vues »).
  *  2. L'état est un objet JSON sérialisable de bout en bout (pas de Map, pas de
  *     Set, pas de classe) : on peut le logger, le diffuser tel quel, le
  *     sauvegarder en SQLite ou le rejouer dans un test.

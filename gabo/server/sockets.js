@@ -309,4 +309,3 @@ export function registerGaboHandlers(nsp, options = {}) {
   return { changed };
 }
 
-export { REACTIONS };

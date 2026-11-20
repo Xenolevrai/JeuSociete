@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { socket } from '../lib/socket.js';
 import Grid from './Grid.jsx';
-import SeatDot from './Avatar.jsx';
+import SeatDot from './SeatDot.jsx';
 import { PlayerList, AddBots, Settings, ShareCode } from './Lobby.jsx';
 
 export default function RoundEnd({ view, onLeave }) {
